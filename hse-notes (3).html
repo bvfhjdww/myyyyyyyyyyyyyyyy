@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>دفتر ملاحظات HSE — Phase 3</title>
+<style>
+  :root{
+    --bg:#15171A;
+    --panel:#1E2124;
+    --panel-2:#24272B;
+    --border:#31353A;
+    --yellow:#F5B900;
+    --red:#D6453B;
+    --green:#4CAF7D;
+    --text:#F0EFEA;
+    --muted:#9AA0A6;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Segoe UI","Tahoma","Arial",sans-serif;
+    font-size:16px;
+    line-height:1.6;
+    padding-bottom:90px;
+  }
+  .en{
+    direction:ltr;
+    unicode-bidi:isolate;
+    color:var(--muted);
+  }
+  header{
+    padding:18px 16px 14px;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+  }
+  header h1{
+    margin:0 0 2px;
+    font-size:19px;
+    font-weight:700;
+  }
+  header p{
+    margin:0;
+    font-size:13px;
+    color:var(--muted);
+  }
+  .hazard-rule{
+    height:5px;
+    margin-top:12px;
+    background:repeating-linear-gradient(-45deg,var(--yellow) 0 10px,#1a1a1a 10px 20px);
+    opacity:.85;
+    border-radius:2px;
+  }
+  main{
+    max-width:640px;
+    margin:0 auto;
+    padding:14px 12px 0;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px;
+    margin-bottom:12px;
+  }
+  .card h2{
+    font-size:15px;
+    margin:0 0 10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  label{
+    display:block;
+    font-size:13px;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  input[type=text]{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:10px 12px;
+    border-radius:8px;
+    font-size:15px;
+  }
+  input[type=text]:focus{outline:2px solid var(--yellow);border-color:var(--yellow);}
+  .villa-row{display:flex;gap:8px;align-items:flex-end;}
+  .villa-row > div{flex:1;}
+  .resp-chip{
+    margin-top:10px;
+    padding:8px 10px;
+    background:var(--panel-2);
+    border:1px dashed var(--border);
+    border-radius:8px;
+    font-size:14px;
+  }
+  .resp-chip b{color:var(--yellow);}
+  details{
+    border:1px solid var(--border);
+    border-radius:10px;
+    margin-bottom:8px;
+    background:var(--panel);
+    overflow:hidden;
+  }
+  summary{
+    padding:12px 14px;
+    cursor:pointer;
+    font-weight:600;
+    font-size:14.5px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    list-style:none;
+  }
+  summary::-webkit-details-marker{display:none;}
+  summary .count{
+    font-size:12px;
+    color:var(--bg);
+    background:var(--yellow);
+    border-radius:20px;
+    padding:1px 8px;
+    min-width:18px;
+    text-align:center;
+    display:none;
+  }
+  summary .count.show{display:inline-block;}
+  .chips{
+    padding:4px 12px 14px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .chip{
+    text-align:right;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:9px 12px;
+    cursor:pointer;
+    font-size:14px;
+    color:var(--text);
+  }
+  .chip .en{display:block;font-size:12px;margin-top:3px;}
+  .chip.selected{
+    border-color:var(--yellow);
+    background:rgba(245,185,0,.10);
+  }
+  .chip.urgent.selected{border-color:var(--red);background:rgba(214,69,59,.12);}
+  .chip.urgent::before{
+    content:"! ";
+    color:var(--red);
+    font-weight:700;
+  }
+  .manage-row{
+    display:flex;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .manage-row input{flex:1;}
+  .btn-sm{
+    background:var(--yellow);
+    color:#1a1a1a;
+    border:none;
+    border-radius:8px;
+    padding:0 14px;
+    font-weight:700;
+    cursor:pointer;
+    font-size:14px;
+  }
+  .villa-list{display:flex;flex-direction:column;gap:6px;}
+  .villa-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:7px 10px;
+    font-size:13.5px;
+  }
+  .villa-item span.num{color:var(--yellow);font-weight:700;}
+  .villa-item button{
+    background:none;
+    border:none;
+    color:var(--red);
+    cursor:pointer;
+    font-size:13px;
+  }
+  footer.bar{
+    position:fixed;
+    bottom:0;left:0;right:0;
+    background:var(--panel);
+    border-top:1px solid var(--border);
+    padding:10px 12px;
+    display:flex;
+    gap:8px;
+  }
+  footer.bar button{
+    flex:1;
+    padding:13px;
+    border-radius:9px;
+    border:none;
+    font-weight:700;
+    font-size:15px;
+    cursor:pointer;
+  }
+  #clearBtn{background:var(--panel-2);color:var(--muted);border:1px solid var(--border);flex:.6;}
+  #genBtn{background:var(--yellow);color:#1a1a1a;}
+  .modal{
+    position:fixed;inset:0;
+    background:rgba(0,0,0,.7);
+    display:none;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:50;
+  }
+  .modal.open{display:flex;}
+  .modal-inner{
+    background:var(--panel);
+    border-radius:14px 14px 0 0;
+    width:100%;
+    max-width:640px;
+    padding:16px;
+    max-height:80vh;
+    overflow-y:auto;
+  }
+  .modal-inner h3{margin:0 0 10px;font-size:15px;}
+  #previewText{
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px;
+    white-space:pre-wrap;
+    font-size:14.5px;
+    line-height:1.7;
+    margin-bottom:12px;
+  }
+  .modal-actions{display:flex;gap:8px;}
+  .modal-actions button{
+    flex:1;
+    padding:12px;
+    border-radius:9px;
+    border:none;
+    font-weight:700;
+    cursor:pointer;
+    font-size:14.5px;
+  }
+  #copyBtn{background:var(--green);color:#08120c;}
+  #copyEnBtn{background:#2E6E52;color:#EFFFF7;}
+  #closeModal{background:var(--panel-2);color:var(--text);border:1px solid var(--border);}
+  .modal-actions{flex-wrap:wrap;}
+  .modal-actions button{min-width:130px;}
+  .add-template-row{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+  .add-template-row select{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:10px 12px;
+    border-radius:8px;
+    font-size:14.5px;
+  }
+  .add-template-row .urgent-check{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13.5px;
+    color:var(--muted);
+  }
+  .custom-item-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:7px 10px;
+    font-size:13px;
+    margin-bottom:6px;
+  }
+  .custom-item-row button{background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;}
+  .storage-note{
+    font-size:12.5px;
+    color:var(--green);
+    background:rgba(76,175,125,.10);
+    border:1px solid rgba(76,175,125,.3);
+    border-radius:8px;
+    padding:8px 10px;
+    margin-top:8px;
+  }
+  .sync-status{
+    font-size:13px;
+    color:var(--muted);
+    background:var(--panel-2);
+    border:1px dashed var(--border);
+    border-radius:8px;
+    padding:8px 10px;
+  }
+  .sync-status.ok{color:var(--green); border-color:rgba(76,175,125,.4);}
+  .sync-status.err{color:var(--red); border-color:rgba(214,69,59,.4);}
+  .sync-actions{display:flex; gap:8px; margin-top:10px;}
+  .sync-btn{flex:1; background:var(--panel-2); color:var(--text); border:1px solid var(--border);}
+  .sync-steps{
+    margin:0;
+    padding-inline-start:20px;
+    font-size:13px;
+    color:var(--muted);
+    line-height:1.9;
+  }
+  .toast{
+    position:fixed;
+    bottom:100px;left:50%;
+    transform:translateX(-50%);
+    background:var(--green);
+    color:#08120c;
+    padding:9px 18px;
+    border-radius:20px;
+    font-size:13.5px;
+    font-weight:700;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s;
+    z-index:60;
+  }
+  .toast.show{opacity:1;}
+  .empty-hint{color:var(--muted);font-size:13px;text-align:center;padding:6px 0;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>دفتر ملاحظات HSE — Phase 3</h1>
+  <p>يعمل بدون إنترنت بالكامل بعد فتحه لأول مرة · اختر رقم الفيلا والمخالفات ثم انسخ الملاحظة</p>
+  <div class="hazard-rule"></div>
+</header>
+
+<main>
+
+  <div class="card">
+    <h2>رقم الفيلا والمسؤول</h2>
+    <div class="villa-row">
+      <div>
+        <label>رقم الفيلا (اختياري)</label>
+        <input type="text" id="villaInput" list="villaOptions" placeholder="مثال: 2652 (رقم الفيلا فقط، بدون الفيز)" autocomplete="off">
+        <datalist id="villaOptions"></datalist>
+      </div>
+    </div>
+    <div class="resp-chip" id="respChip">اكتب رقم الفيلا لعرض المسؤول</div>
+  </div>
+
+  <div class="card" id="templatesCard">
+    <h2>اختر المخالفات <span class="empty-hint" id="selCountHint"></span></h2>
+    <div id="categoriesWrap"></div>
+  </div>
+
+  <details class="card" style="padding:0;">
+    <summary style="padding:14px;">إضافة قالب مخالفة جديد</summary>
+    <div style="padding:0 14px 14px;">
+      <div class="add-template-row">
+        <select id="newCatSelect"></select>
+        <input type="text" id="newArInput" placeholder="نص المخالفة بالعربي">
+        <input type="text" id="newEnInput" placeholder="English text">
+        <label class="urgent-check">
+          <input type="checkbox" id="newUrgentCheck">
+          خطر — يوجب إيقاف العمل فورًا
+        </label>
+        <button class="btn-sm" id="newAddBtn">إضافة القالب</button>
+      </div>
+      <div id="customItemsListWrap"></div>
+      <div class="storage-note">الموقع محمّل مسبقًا بـ203 فيلا من سجلات المحادثات. أي إضافة أو تعديل تسويه يُحفظ داخل هذا المتصفح على هذا الجهاز ويبقى موجودًا حتى بدون إنترنت — لكنه لا ينتقل تلقائيًا لجهاز أو متصفح آخر.</div>
+    </div>
+  </details>
+
+  <details class="card" style="padding:0;">
+    <summary style="padding:14px;">إدارة المسؤولين عن الفلل</summary>
+    <div style="padding:0 14px 14px;">
+      <div class="manage-row">
+        <input type="text" id="mgNum" placeholder="رقم الفيلا">
+        <input type="text" id="mgName" placeholder="اسم المسؤول (بدون @)">
+        <button class="btn-sm" id="mgSave">حفظ</button>
+      </div>
+      <div class="villa-list" id="villaListWrap"></div>
+    </div>
+  </details>
+
+  <details class="card" style="padding:0;">
+    <summary style="padding:14px;">مزامنة مع Google Sheets (اختياري — لمشاركة نفس الجدول بين أكثر من جهاز)</summary>
+    <div style="padding:0 14px 14px;">
+      <div class="sync-status" id="syncStatus">غير مفعّلة — الموقع يعمل محليًا فقط على هذا الجهاز.</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px;">تشمل المزامنة: جدول الفلل والمسؤولين + القوالب المخصصة اللي تضيفها.</div>
+      <div class="manage-row" style="margin-top:10px;">
+        <input type="text" id="syncUrlInput" placeholder="رابط Google Apps Script (Web App URL)">
+        <button class="btn-sm" id="syncSaveUrlBtn">حفظ الرابط</button>
+      </div>
+      <div class="sync-actions">
+        <button class="btn-sm sync-btn" id="syncPullBtn">⬇️ تنزيل آخر تحديث من الشيت</button>
+        <button class="btn-sm sync-btn" id="syncPushBtn">⬆️ رفع نسختي إلى الشيت</button>
+      </div>
+      <details style="margin-top:10px;">
+        <summary style="padding:10px 0; font-size:13px; color:var(--muted);">كيف أسوي الربط؟ (مرة وحدة بس)</summary>
+        <ol class="sync-steps">
+          <li>افتح <b>sheets.google.com</b> واعمل شيت جديد فاضي.</li>
+          <li>من القائمة: Extensions ← Apps Script.</li>
+          <li>احذف أي كود موجود، والصق كود الـ Apps Script اللي أعطيتك إياه.</li>
+          <li>اضغط Deploy ← New deployment ← اختر النوع Web app.</li>
+          <li>Execute as: Me. Who has access: Anyone.</li>
+          <li>اضغط Deploy، وانسخ الرابط (Web App URL) اللي يظهر لك.</li>
+          <li>الصق الرابط بالخانة أعلاه واضغط "حفظ الرابط".</li>
+          <li>نفس الرابط تعطيه لأي جهاز ثاني تبي يشارك بنفس الجدول.</li>
+        </ol>
+      </details>
+    </div>
+  </details>
+
+</main>
+
+<footer class="bar">
+  <button id="clearBtn">مسح الكل</button>
+  <button id="genBtn">معاينة الملاحظة</button>
+</footer>
+
+<div class="modal" id="modal">
+  <div class="modal-inner">
+    <h3>الملاحظة الجاهزة</h3>
+    <div id="previewText"></div>
+    <div class="modal-actions">
+      <button id="closeModal">إغلاق</button>
+      <button id="copyEnBtn">نسخ الإنجليزي فقط</button>
+      <button id="copyBtn">نسخ الملاحظة كاملة</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast">تم النسخ ✓</div>
+
+<script>
+/* ---------- بيانات القوالب ---------- */
+const CATEGORIES = [
+  {key:"ppe", ar:"معدات الحماية الشخصية (PPE)", en:"PPE",
+   corrective_ar:"يجب توفير معدات الحماية الشخصية الكاملة لجميع العمال وإلزامهم باستخدامها فورًا.",
+   corrective_en:"Complete PPE must be provided to all workers and its use enforced immediately.",
+   items:[
+    {ar:"عمال بدون معدات حماية شخصية كاملة", en:"Workers without complete PPE", urgent:true},
+    {ar:"نظارات السلامة غير مستخدمة أثناء أعمال القطع/الطحن", en:"Safety goggles not used during cutting/grinding works", urgent:true},
+    {ar:"قفازات السلامة غير مستخدمة أثناء التعامل مع مواد حادة", en:"Safety gloves not used while handling sharp materials", urgent:false},
+    {ar:"كمامات الحماية من الغبار غير مستخدمة", en:"Dust masks not being used", urgent:false},
+    {ar:"سدادات الأذن غير مستخدمة في منطقة ضوضاء عالية", en:"Ear plugs not used in high-noise area", urgent:false},
+    {ar:"سترات السلامة عالية الوضوح غير مرتداة", en:"High-visibility safety vests not worn", urgent:false},
+    {ar:"أحزمة سلامة غير مطابقة للمواصفات", en:"Non-compliant safety belts in use", urgent:true},
+    {ar:"معدات حماية تالفة أو غير صالحة للاستخدام", en:"Damaged or unfit-for-use PPE", urgent:true},
+   ]},
+  {key:"helmet", ar:"خوذة السلامة (Safety Helmet)", en:"Safety Helmet",
+   corrective_ar:"يجب على جميع العمال ارتداء خوذات سلامة مطابقة للمواصفات وتثبيتها بشكل صحيح فورًا.",
+   corrective_en:"All workers must wear compliant safety helmets, properly secured, immediately.",
+   items:[
+    {ar:"عمال بدون خوذات سلامة", en:"Workers without safety helmets", urgent:true},
+    {ar:"خوذات سلامة تالفة أو منتهية الصلاحية", en:"Damaged or expired safety helmets", urgent:true},
+    {ar:"خوذة غير مثبتة بشكل صحيح (بدون حزام الذقن)", en:"Helmet not properly secured (chin strap missing)", urgent:false},
+    {ar:"ارتداء خوذة غير مطابقة لمواصفات الموقع", en:"Non-compliant helmet worn on site", urgent:false},
+    {ar:"عدم ارتداء الخوذة داخل منطقة إلزامية بحسب اللافتات", en:"Helmet not worn inside mandatory signage zone", urgent:true},
+    {ar:"خوذات مستخدمة لغرض غير مخصص لها", en:"Helmets used for unintended purpose", urgent:false},
+    {ar:"عدم توفر خوذات احتياطية للزوار", en:"No spare helmets available for visitors", urgent:false},
+    {ar:"لون الخوذة غير مطابق لتصنيف الفريق/الصلاحية", en:"Helmet color not matching team/authorization classification", urgent:false},
+   ]},
+  {key:"shoes", ar:"حذاء السلامة (Safety Shoes)", en:"Safety Shoes",
+   corrective_ar:"يجب ارتداء أحذية سلامة مطابقة للمواصفات من قبل جميع العمال قبل الدخول إلى الموقع.",
+   corrective_en:"Compliant safety shoes must be worn by all workers before entering the site.",
+   items:[
+    {ar:"عمال بدون أحذية سلامة", en:"Workers without safety shoes", urgent:true},
+    {ar:"أحذية سلامة تالفة أو مهترئة", en:"Damaged or worn-out safety shoes", urgent:false},
+    {ar:"أحذية غير مطابقة للمواصفات (بدون رأس معدني)", en:"Non-compliant shoes (no steel toe)", urgent:false},
+    {ar:"ارتداء صنادل أو أحذية غير مناسبة للموقع", en:"Sandals or unsuitable footwear worn on site", urgent:true},
+    {ar:"أحذية تالفة بسبب التعرض للمواد الكيميائية", en:"Shoes damaged from chemical exposure", urgent:false},
+    {ar:"عدم ربط أربطة الحذاء بشكل صحيح", en:"Shoe laces not properly fastened", urgent:false},
+    {ar:"أحذية غير مناسبة لطبيعة العمل (مثل العمل الكهربائي)", en:"Footwear unsuitable for the task (e.g. electrical work)", urgent:false},
+    {ar:"نعل الحذاء غير مضاد للانزلاق في منطقة مبللة", en:"Non slip-resistant sole in a wet area", urgent:false},
+   ]},
+  {key:"fall", ar:"الحماية من السقوط (Fall Protection)", en:"Fall Protection",
+   corrective_ar:"يجب إيقاف العمل فورًا وتوفير وسائل الحماية من السقوط المطابقة قبل استئناف العمل.",
+   corrective_en:"Work must be stopped immediately and proper fall protection provided before resuming.",
+   items:[
+    {ar:"عامل يعمل على ارتفاع دون حزام سلامة", en:"Worker at height without a safety harness", urgent:true},
+    {ar:"حزام السلامة غير مربوط بنقطة تثبيت معتمدة", en:"Harness not attached to an approved anchor point", urgent:true},
+    {ar:"عدم وجود شبكة حماية أسفل منطقة العمل بالارتفاع", en:"No safety net below the height work area", urgent:true},
+    {ar:"حبل الأمان (Lanyard) تالف أو غير مطابق", en:"Lanyard damaged or non-compliant", urgent:true},
+    {ar:"نقطة الربط (Anchor point) غير مناسبة أو غير معتمدة", en:"Anchor point unsuitable or unapproved", urgent:true},
+    {ar:"عدم وجود درابزين حماية عند حافة السقف/الفتحة", en:"No guardrail at roof edge/opening", urgent:true},
+    {ar:"عامل يقف على حافة غير محمية دون حماية من السقوط", en:"Worker standing on an unprotected edge without fall protection", urgent:true},
+    {ar:"معدات الحماية من السقوط غير مفحوصة قبل الاستخدام", en:"Fall protection equipment not inspected before use", urgent:false},
+   ]},
+  {key:"height", ar:"العمل على ارتفاع (Working at Height)", en:"Working at Height",
+   corrective_ar:"يجب إيقاف أعمال الارتفاع فورًا حتى استيفاء جميع اشتراطات السلامة.",
+   corrective_en:"Height works must be stopped immediately until all safety requirements are met.",
+   items:[
+    {ar:"عمل على ارتفاع بدون تصريح عمل (Permit to Work)", en:"Height work without a Permit to Work", urgent:true},
+    {ar:"استخدام سلم غير آمن أو تالف للوصول إلى الارتفاع", en:"Unsafe or damaged ladder used to access height", urgent:true},
+    {ar:"عدم تثبيت السلم بشكل صحيح", en:"Ladder not properly secured", urgent:true},
+    {ar:"عامل يعمل على منصة غير مستقرة", en:"Worker on an unstable platform", urgent:true},
+    {ar:"عدم وجود إشراف مباشر أثناء العمل على ارتفاع", en:"No direct supervision during height work", urgent:false},
+    {ar:"استخدام نصة عمل مرتفعة (MEWP) دون تدريب معتمد", en:"MEWP used without approved training/certification", urgent:true},
+    {ar:"عدم إغلاق المنطقة أسفل موقع العمل بالارتفاع", en:"Area below the height work not barricaded", urgent:true},
+    {ar:"تجاوز الحمل الآمن للمنصة أو السقالة", en:"Safe working load of platform/scaffold exceeded", urgent:true},
+   ]},
+  {key:"scaffold", ar:"السقالات (Scaffolding)", en:"Scaffolding",
+   corrective_ar:"يجب إيقاف استخدام السقالة فورًا حتى يتم فحصها واعتمادها من قبل مهندس مختص.",
+   corrective_en:"Scaffold use must be stopped immediately until inspected and approved by a competent engineer.",
+   items:[
+    {ar:"سقالة غير معتمدة أو بدون بطاقة فحص (Scaff Tag)", en:"Scaffold unapproved or missing inspection tag", urgent:true},
+    {ar:"سقالة غير مكتملة التركيب", en:"Scaffold assembly incomplete", urgent:true},
+    {ar:"ألواح أرضية السقالة مفقودة أو غير مثبتة", en:"Scaffold planks missing or not secured", urgent:true},
+    {ar:"عدم وجود درابزين حماية على السقالة", en:"No guardrail on the scaffold", urgent:true},
+    {ar:"سقالة غير مثبتة بشكل آمن على الأرض", en:"Scaffold not safely secured to the ground", urgent:true},
+    {ar:"تحميل السقالة بأوزان تتجاوز الحد الآمن", en:"Scaffold loaded beyond the safe limit", urgent:true},
+    {ar:"سلم الوصول إلى السقالة غير آمن", en:"Scaffold access ladder unsafe", urgent:false},
+    {ar:"سقالة تالفة أو صدئة تحتاج استبدال", en:"Scaffold damaged/corroded and needs replacement", urgent:false},
+   ]},
+  {key:"excavation", ar:"الحفريات (Excavation)", en:"Excavation",
+   corrective_ar:"يجب تأمين منطقة الحفر فورًا بالحواجز واللافتات ومنع الدخول غير المصرح به.",
+   corrective_en:"The excavation area must be secured immediately with barricades and signage, preventing unauthorized entry.",
+   items:[
+    {ar:"حفرية مفتوحة بدون حواجز تحذيرية", en:"Open excavation without warning barricades", urgent:true},
+    {ar:"عدم وجود لافتات تحذير حول منطقة الحفر", en:"No warning signage around the excavation", urgent:false},
+    {ar:"جدران الحفرية غير مدعمة (بدون Shoring)", en:"Excavation walls not supported (no shoring)", urgent:true},
+    {ar:"عدم وجود سلم للخروج الآمن من الحفرية", en:"No ladder for safe exit from the excavation", urgent:true},
+    {ar:"تراكم مواد بالقرب من حافة الحفرية", en:"Materials stacked near the excavation edge", urgent:true},
+    {ar:"عمال يعملون داخل الحفرية دون إشراف", en:"Workers inside the excavation without supervision", urgent:false},
+    {ar:"عدم فحص الحفرية يوميًا قبل بدء العمل", en:"No daily excavation inspection before work starts", urgent:false},
+    {ar:"تجمع مياه داخل الحفرية دون تصريف", en:"Water accumulated inside the excavation without drainage", urgent:false},
+   ]},
+  {key:"electrical", ar:"السلامة الكهربائية (Electrical Safety)", en:"Electrical Safety",
+   corrective_ar:"يجب فصل التيار الكهربائي فورًا عن المصدر المتضرر وإصلاحه من قبل فني كهرباء مؤهل قبل الاستخدام.",
+   corrective_en:"Power must be disconnected immediately from the affected source and repaired by a qualified electrician before use.",
+   items:[
+    {ar:"كابلات كهربائية مكشوفة أو تالفة", en:"Exposed or damaged electrical cables", urgent:true},
+    {ar:"لوحة كهربائية مفتوحة بدون غطاء حماية", en:"Electrical panel open without protective cover", urgent:true},
+    {ar:"توصيلات كهربائية عشوائية أو غير آمنة", en:"Random or unsafe electrical connections", urgent:true},
+    {ar:"عدم وجود قاطع تسرب أرضي (ELCB) للمعدات", en:"No earth leakage circuit breaker (ELCB) for equipment", urgent:true},
+    {ar:"كابلات ممددة على الأرض في مسار الحركة", en:"Cables laid across a walkway", urgent:false},
+    {ar:"معدات كهربائية مبللة أو قريبة من مصدر مياه", en:"Electrical equipment wet or near a water source", urgent:true},
+    {ar:"عدم تأريض المعدات الكهربائية بشكل صحيح", en:"Electrical equipment not properly earthed", urgent:true},
+    {ar:"عمل على لوحة كهربائية دون قفل/عزل (LOTO)", en:"Work on electrical panel without lockout/tagout (LOTO)", urgent:true},
+   ]},
+  {key:"fire", ar:"السلامة من الحريق (Fire Safety)", en:"Fire Safety",
+   corrective_ar:"يجب إزالة مصادر الخطر فورًا وتوفير وسائل مكافحة الحريق المطلوبة.",
+   corrective_en:"Hazard sources must be removed immediately and required fire-fighting means provided.",
+   items:[
+    {ar:"عدم توفر طفايات حريق في الموقع", en:"No fire extinguishers available on site", urgent:true},
+    {ar:"طفاية حريق منتهية الصلاحية أو غير مفحوصة", en:"Fire extinguisher expired or not inspected", urgent:false},
+    {ar:"مسار الإخلاء مسدود بمواد أو معدات", en:"Evacuation route blocked by materials/equipment", urgent:true},
+    {ar:"تخزين مواد قابلة للاشتعال بالقرب من مصدر حرارة", en:"Flammable materials stored near a heat source", urgent:true},
+    {ar:"عدم وجود تصريح عمل ساخن (Hot Work Permit) لأعمال اللحام", en:"No Hot Work Permit for welding activities", urgent:true},
+    {ar:"أعمال لحام/قطع بدون بطانية مقاومة للحريق", en:"Welding/cutting works without a fire blanket", urgent:true},
+    {ar:"عدم وجود إشارات إرشادية لمخارج الطوارئ", en:"No directional signage for emergency exits", urgent:false},
+    {ar:"تراكم نفايات قابلة للاشتعال في الموقع", en:"Combustible waste accumulated on site", urgent:false},
+   ]},
+  {key:"housekeeping", ar:"النظافة العامة (Housekeeping)", en:"Housekeeping",
+   corrective_ar:"يجب تنظيف الموقع فورًا وإزالة جميع المخلفات وترتيب المواد والأدوات.",
+   corrective_en:"The site must be cleaned immediately, all waste removed, and materials and tools organized.",
+   items:[
+    {ar:"تراكم مخلفات البناء في ممرات الحركة", en:"Construction debris piled up in walkways", urgent:false},
+    {ar:"أسلاك ومواد متناثرة تشكل خطر تعثر", en:"Scattered wires/materials creating a trip hazard", urgent:false},
+    {ar:"عدم تنظيف بقايا المواد بعد انتهاء العمل اليومي", en:"Material residue not cleaned after daily work", urgent:false},
+    {ar:"تكديس مواد بشكل عشوائي وغير آمن", en:"Materials stacked randomly and unsafely", urgent:false},
+    {ar:"تراكم نفايات خشبية ومعدنية دون تصنيف", en:"Wood and metal waste accumulated unsorted", urgent:false},
+    {ar:"ممرات الطوارئ مسدودة بمخلفات", en:"Emergency walkways blocked by debris", urgent:true},
+    {ar:"أدوات وعدد مبعثرة في منطقة العمل", en:"Tools scattered around the work area", urgent:false},
+    {ar:"بقع زيوت أو سوائل على الأرض دون تنظيف", en:"Oil/liquid spills on the floor not cleaned", urgent:false},
+    {ar:"حاويات نفايات ممتلئة وغير مفرغة", en:"Waste bins full and not emptied", urgent:false},
+    {ar:"عدم وجود تصنيف للمخلفات (خشب/معدن/عام)", en:"No waste segregation (wood/metal/general)", urgent:false},
+   ]},
+  {key:"weather", ar:"الحماية من الظروف الجوية (Weather Protection)", en:"Weather Protection",
+   corrective_ar:"يجب تطبيق إجراءات الحماية من الظروف الجوية فورًا وتوفير الظل ومياه الشرب وساعات الراحة المطلوبة.",
+   corrective_en:"Weather-protection measures must be applied immediately, providing shade, drinking water, and required rest hours.",
+   items:[
+    {ar:"عمال يعملون تحت أشعة الشمس المباشرة وقت الذروة", en:"Workers exposed to direct sun during peak hours", urgent:true},
+    {ar:"عدم توفر مياه شرب باردة كافية وقت الحرارة الشديدة", en:"Insufficient cold drinking water during extreme heat", urgent:true},
+    {ar:"عدم تطبيق ساعات الراحة الإلزامية في فترة الظهيرة", en:"Mandatory midday rest hours not applied", urgent:true},
+    {ar:"عدم توفر منطقة ظل للاستراحة", en:"No shaded rest area available", urgent:false},
+    {ar:"استمرار العمل الخارجي أثناء تحذير جوي (رياح/أمطار)", en:"Outdoor work continuing during a weather warning (wind/rain)", urgent:true},
+    {ar:"عدم توفر إسعافات أولية لحالات الإجهاد الحراري", en:"No first aid available for heat-stress cases", urgent:true},
+    {ar:"عمال بدون حماية من أشعة الشمس (غطاء رأس)", en:"Workers without sun protection (head cover)", urgent:false},
+    {ar:"عدم مراقبة درجة الحرارة والرطوبة في الموقع", en:"Site temperature and humidity not being monitored", urgent:false},
+   ]},
+  {key:"access", ar:"الدخول والخروج (Access/Egress)", en:"Access/Egress",
+   corrective_ar:"يجب إعادة فتح وتأمين مسار الدخول/الخروج فورًا لضمان الإخلاء الآمن.",
+   corrective_en:"The access/egress route must be reopened and secured immediately to ensure safe evacuation.",
+   items:[
+    {ar:"ممر دخول/خروج الموقع غير آمن أو مسدود", en:"Site access/egress route unsafe or blocked", urgent:true},
+    {ar:"عدم وجود مسار واضح للمشاة داخل الموقع", en:"No clear pedestrian route within the site", urgent:false},
+    {ar:"بوابة الطوارئ مقفلة أو مسدودة", en:"Emergency gate locked or obstructed", urgent:true},
+    {ar:"سلالم الوصول غير مؤمنة أو تالفة", en:"Access stairs unsecured or damaged", urgent:true},
+    {ar:"عدم فصل مسارات المشاة عن حركة المعدات", en:"Pedestrian routes not separated from equipment traffic", urgent:true},
+    {ar:"درج مؤقت غير مطابق للمواصفات (بدون درابزين)", en:"Temporary stairs non-compliant (no handrail)", urgent:false},
+    {ar:"عدم وضوح لافتات الاتجاه لمخارج الطوارئ", en:"Directional signage to emergency exits unclear", urgent:false},
+    {ar:"أرضية ممر الدخول غير مستوية أو خطرة", en:"Access walkway surface uneven or hazardous", urgent:false},
+   ]},
+  {key:"acts", ar:"التصرفات غير الآمنة (Unsafe Acts)", en:"Unsafe Acts",
+   corrective_ar:"يجب إيقاف الممارسة الخاطئة فورًا وتوعية العامل بالإجراء الصحيح واتخاذ اللازم إداريًا عند التكرار.",
+   corrective_en:"The unsafe practice must be stopped immediately, the worker briefed on the correct procedure, and administrative action taken if repeated.",
+   items:[
+    {ar:"عامل يتجاهل تعليمات السلامة الموضحة في الموقع", en:"Worker ignoring posted site safety instructions", urgent:false},
+    {ar:"استخدام أدوات أو معدات بطريقة غير مخصصة لها", en:"Tools/equipment used for an unintended purpose", urgent:false},
+    {ar:"عامل يقفز بدلاً من استخدام السلم للوصول", en:"Worker jumping instead of using a ladder for access", urgent:false},
+    {ar:"التدخين في منطقة محظورة", en:"Smoking in a prohibited area", urgent:true},
+    {ar:"استخدام الهاتف الجوال أثناء تشغيل معدة أو آلية", en:"Using a mobile phone while operating equipment/machinery", urgent:true},
+    {ar:"إزالة أو تعطيل واقي أمان من معدة أو آلة", en:"Safety guard removed or disabled on equipment", urgent:true},
+    {ar:"الدخول إلى منطقة محظورة دون تصريح", en:"Entering a restricted area without authorization", urgent:true},
+    {ar:"ركوب أكثر من شخص على معدة مخصصة لشخص واحد", en:"More than one person riding equipment meant for one", urgent:false},
+   ]},
+  {key:"conditions", ar:"الحالات غير الآمنة (Unsafe Conditions)", en:"Unsafe Conditions",
+   corrective_ar:"يجب تصحيح الحالة غير الآمنة فورًا ومنع الوصول إلى المنطقة حتى معالجتها.",
+   corrective_en:"The unsafe condition must be corrected immediately and access to the area prevented until resolved.",
+   items:[
+    {ar:"أرضية غير مستوية أو متضررة في منطقة العمل", en:"Uneven or damaged flooring in the work area", urgent:false},
+    {ar:"إضاءة غير كافية في منطقة العمل", en:"Insufficient lighting in the work area", urgent:false},
+    {ar:"تهوية غير كافية في مكان مغلق", en:"Insufficient ventilation in a confined space", urgent:true},
+    {ar:"تسرب مياه أو سوائل يشكل خطر انزلاق", en:"Water/liquid leak creating a slip hazard", urgent:false},
+    {ar:"تراكم غازات أو أبخرة في مكان مغلق", en:"Gas/vapor buildup in a confined space", urgent:true},
+    {ar:"هيكل مؤقت غير مستقر (بدون دعم كافٍ)", en:"Unstable temporary structure (insufficient support)", urgent:true},
+    {ar:"مواد مخزنة بشكل غير آمن وقابلة للسقوط", en:"Materials stored unsafely and at risk of falling", urgent:false},
+    {ar:"عدم وجود إنارة كافية في ساعات المساء", en:"Insufficient lighting during evening hours", urgent:false},
+   ]},
+  {key:"barricading", ar:"التسييج والحواجز (Barricading)", en:"Barricading",
+   corrective_ar:"يجب تسييج المنطقة فورًا بالحواجز واللافتات التحذيرية المناسبة ومنع الدخول غير المصرح به.",
+   corrective_en:"The area must be barricaded immediately with proper warning barriers and signage, preventing unauthorized entry.",
+   items:[
+    {ar:"منطقة خطرة غير محاطة بحواجز تحذيرية", en:"Hazardous area not enclosed with warning barricades", urgent:true},
+    {ar:"حواجز السلامة غير كافية أو غير واضحة", en:"Safety barriers insufficient or unclear", urgent:false},
+    {ar:"لافتات تحذير مفقودة حول منطقة العمل", en:"Warning signage missing around the work area", urgent:false},
+    {ar:"شريط تحذيري تالف أو غير مثبت بشكل صحيح", en:"Warning tape damaged or not properly installed", urgent:false},
+    {ar:"منطقة أعمال علوية غير محجوزة أسفلها", en:"Overhead work area not barricaded below", urgent:true},
+    {ar:"فتحة أرضية غير مغطاة أو غير محاطة بحواجز", en:"Floor opening uncovered or unbarricaded", urgent:true},
+    {ar:"حاجز سلامة تمت إزالته دون إعادة تركيبه", en:"Safety barrier removed and not reinstated", urgent:true},
+    {ar:"عدم وجود حارس أو مراقب عند منطقة الخطر", en:"No watchman/monitor at the hazard area", urgent:false},
+   ]},
+  {key:"lifting", ar:"عمليات الرفع (Lifting Operations)", en:"Lifting Operations",
+   corrective_ar:"يجب إيقاف عملية الرفع فورًا حتى استيفاء جميع اشتراطات السلامة والتأكد من سلامة المعدات.",
+   corrective_en:"The lifting operation must be stopped immediately until all safety requirements are met and equipment integrity confirmed.",
+   items:[
+    {ar:"عملية رفع بدون مشرف رفع (Banksman) معتمد", en:"Lifting operation without an approved banksman", urgent:true},
+    {ar:"سلامة الرافعة أو الرافعة الشوكية غير مفحوصة", en:"Crane/forklift safety not inspected", urgent:true},
+    {ar:"سلاسل أو أحزمة الرفع تالفة أو غير مطابقة", en:"Lifting chains/slings damaged or non-compliant", urgent:true},
+    {ar:"تجاوز الحمل الآمن المسموح به للرافعة", en:"Crane's safe working load exceeded", urgent:true},
+    {ar:"عدم إغلاق المنطقة أسفل الحمل أثناء الرفع", en:"Area under the load not barricaded during lifting", urgent:true},
+    {ar:"عامل يقف أسفل حمل معلق", en:"Worker standing under a suspended load", urgent:true},
+    {ar:"عدم وجود تصريح عمل رفع لعملية رفع حرجة", en:"No lift permit for a critical lift", urgent:true},
+    {ar:"إشارات الرفع غير واضحة أو غير متبعة", en:"Lifting signals unclear or not being followed", urgent:false},
+   ]},
+  {key:"tools", ar:"الأدوات والمعدات (Tools & Equipment)", en:"Tools & Equipment",
+   corrective_ar:"يجب سحب الأداة/المعدة التالفة من الاستخدام فورًا واستبدالها بأخرى سليمة ومفحوصة.",
+   corrective_en:"The damaged tool/equipment must be withdrawn from use immediately and replaced with a sound, inspected one.",
+   items:[
+    {ar:"استخدام أدوات تالفة أو غير صالحة للعمل", en:"Damaged or unfit tools being used", urgent:true},
+    {ar:"معدات كهربائية يدوية بدون فحص دوري", en:"Hand-held power tools without periodic inspection", urgent:false},
+    {ar:"عدم وجود واقي أمان على معدة القطع/الطحن", en:"No safety guard on cutting/grinding equipment", urgent:true},
+    {ar:"استخدام معدة دون تدريب أو تفويض", en:"Equipment operated without training or authorization", urgent:true},
+    {ar:"معدات مخزنة بشكل غير آمن بعد الاستخدام", en:"Equipment stored unsafely after use", urgent:false},
+    {ar:"عدم إجراء فحص يومي للمعدات قبل التشغيل", en:"No daily pre-use equipment check being performed", urgent:false},
+    {ar:"كابلات أو خراطيم معدات ممزقة أو مكشوفة", en:"Equipment cables/hoses torn or exposed", urgent:true},
+    {ar:"استخدام معدة لغرض غير مخصصة له", en:"Equipment used for an unintended purpose", urgent:false},
+   ]},
+];
+
+/* ---------- القوالب المخصصة (localStorage) ---------- */
+const BUILTIN_LENGTHS = {};
+CATEGORIES.forEach(c=>{ BUILTIN_LENGTHS[c.key] = c.items.length; });
+
+function loadCustomItems(){
+  try{
+    const raw = localStorage.getItem("hse_custom_items");
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {};
+}
+function saveCustomItems(obj){
+  localStorage.setItem("hse_custom_items", JSON.stringify(obj));
+}
+let customItems = loadCustomItems();
+
+function applyCustomItems(){
+  CATEGORIES.forEach(cat=>{
+    cat.items = cat.items.slice(0, BUILTIN_LENGTHS[cat.key]);
+    (customItems[cat.key]||[]).forEach(ci=>cat.items.push(ci));
+  });
+}
+
+function populateNewCatSelect(){
+  const sel = document.getElementById("newCatSelect");
+  sel.innerHTML = "";
+  CATEGORIES.forEach(cat=>{
+    const opt = document.createElement("option");
+    opt.value = cat.key;
+    opt.textContent = cat.ar + " (" + cat.en + ")";
+    sel.appendChild(opt);
+  });
+}
+
+function renderCustomItemsList(){
+  const wrap = document.getElementById("customItemsListWrap");
+  wrap.innerHTML = "";
+  Object.keys(customItems).forEach(catKey=>{
+    const cat = CATEGORIES.find(c=>c.key===catKey);
+    (customItems[catKey]||[]).forEach((ci, idx)=>{
+      const row = document.createElement("div");
+      row.className = "custom-item-row";
+      row.innerHTML = `<span>${cat ? cat.ar+": " : ""}${ci.ar}</span>`;
+      const del = document.createElement("button");
+      del.textContent = "حذف";
+      del.addEventListener("click", ()=>{
+        customItems[catKey].splice(idx,1);
+        if(customItems[catKey].length===0) delete customItems[catKey];
+        saveCustomItems(customItems);
+        applyCustomItems();
+        renderCategories();
+        renderCustomItemsList();
+      });
+      row.appendChild(del);
+      wrap.appendChild(row);
+    });
+  });
+}
+
+document.getElementById("newAddBtn").addEventListener("click", ()=>{
+  const catKey = document.getElementById("newCatSelect").value;
+  const ar = document.getElementById("newArInput").value.trim();
+  const en = document.getElementById("newEnInput").value.trim();
+  const urgent = document.getElementById("newUrgentCheck").checked;
+  if(!ar || !en){
+    alert("الرجاء كتابة نص المخالفة بالعربي والإنجليزي معًا.");
+    return;
+  }
+  if(!customItems[catKey]) customItems[catKey] = [];
+  customItems[catKey].push({ar, en, urgent});
+  saveCustomItems(customItems);
+  applyCustomItems();
+  renderCategories();
+  renderCustomItemsList();
+  document.getElementById("newArInput").value = "";
+  document.getElementById("newEnInput").value = "";
+  document.getElementById("newUrgentCheck").checked = false;
+});
+
+/* ---------- إدارة بيانات الفلل (localStorage) ---------- */
+const DEFAULT_VILLAS = {
+  "609": "Riaz",
+  "795": "محمد وسيمHSE/SUP",
+  "797": "Hash",
+  "806": "محمد وسيمHSE/SUP",
+  "860": "محمد وسيمHSE/SUP",
+  "862": "Hash",
+  "879": "محمد وسيمHSE/SUP",
+  "892": "محمد وسيمHSE/SUP",
+  "893": "Hash",
+  "894": "Hash",
+  "899": "Hash",
+  "904": "Riaz",
+  "905": "Hash",
+  "913": "Hash",
+  "920": "Hash",
+  "942": "محمد وسيمHSE/SUP",
+  "973": "Ch Daniyal Virk (CHEC)",
+  "990": "kamil shah",
+  "1012": "Hash",
+  "1050": "محمد وسيمHSE/SUP",
+  "1067": "Hash",
+  "1268": "محمد وسيمHSE/SUP",
+  "1330": "Hash",
+  "1371": "Hash",
+  "1390": "Hash",
+  "1405": "Hash",
+  "1406": "Hash",
+  "1407": "kamil shah",
+  "1414": "Hash",
+  "1416": "محمد وسيمHSE/SUP",
+  "1419": "Hash",
+  "1476": "Hash",
+  "1478": "Hash",
+  "1600": "Hash",
+  "1770": "محمد وسيمHSE/SUP",
+  "1778": "Najib Ullah",
+  "1858": "Najib Ullah",
+  "1920": "Najib Ullah",
+  "2026": "Riaz",
+  "2040": "Abdussamad",
+  "2062": "Murad Ali",
+  "2063": "Ismail Sb HSE Manager CHEC",
+  "2064": "Ubaid Ullah/3AB",
+  "2099": "Murad Ali",
+  "2118": "Murad Ali",
+  "2158": "MUZZAM ALI",
+  "2160": "MUZZAM ALI",
+  "2168": "محمد وسيمHSE/SUP",
+  "2174": "Ubaid Ullah/3AB",
+  "2176": "Abdussamad",
+  "2189": "محمد وسيمHSE/SUP",
+  "2194": "MUZZAM ALI",
+  "2200": "Ali Zeb",
+  "2201": "Ali Zeb",
+  "2205": "Ashfaq Khan",
+  "2207": "Ali Zeb",
+  "2211": "Yasir Ali",
+  "2212": "محمد وسيمHSE/SUP",
+  "2213": "محمد وسيمHSE/SUP",
+  "2215": "محمد وسيمHSE/SUP",
+  "2217": "محمد وسيمHSE/SUP",
+  "2221": "Yasir Ali",
+  "2247": "Naveed Khan",
+  "2249": "محمد وسيمHSE/SUP",
+  "2250": "Yasir Ali",
+  "2252": "Yasir Ali",
+  "2253": "Yasir Ali",
+  "2254": "Ubaid Ullah/3AB",
+  "2256": "Ubaid Ullah/3AB",
+  "2257": "Yasir Ali",
+  "2258": "محمد وسيمHSE/SUP",
+  "2267": "Yasir khan (Leon Tech 3A)",
+  "2271": "Naveed Khan",
+  "2274": "Ubaid Ullah/3AB",
+  "2289": "Ubaid Ullah/3AB",
+  "2300": "Ubaid Ullah/3AB",
+  "2304": "Fazal Maula (Leon tech ph 3A)",
+  "2307": "Ubaid Ullah/3AB",
+  "2308": "Saif Ahmad (HSEO CHU)",
+  "2313": "Ubaid Ullah/3AB",
+  "2320": "Ubaid Ullah/3AB",
+  "2325": "محمد وسيمHSE/SUP",
+  "2328": "محمد وسيمHSE/SUP",
+  "2329": "Murad Ali",
+  "2332": "Saif Ahmad (HSEO CHU)",
+  "2367": "Naveed Khan",
+  "2377": "Vigneshwaran",
+  "2388": "Ubaid Ullah/3AB",
+  "2389": "Murad Ali",
+  "2390": "Ubaid Ullah/3AB",
+  "2391": "Ubaid Ullah/3AB",
+  "2395": "Ashfaq Khan",
+  "2428": "Fazal Maula (Leon tech ph 3A)",
+  "2479": "Ubaid Ullah/3AB",
+  "2480": "Ubaid Ullah/3AB",
+  "2481": "Asif khan",
+  "2482": "Asif khan",
+  "2485": "Ubaid Ullah/3AB",
+  "2488": "Fazal Maula (Leon tech ph 3A)",
+  "2489": "Asif khan",
+  "2492": "Asif khan",
+  "2493": "Ubaid Ullah/3AB",
+  "2495": "Ubaid Ullah/3AB",
+  "2498": "Yasir khan (Leon Tech 3A)",
+  "2503": "prince rai(HSEO leon 3A)",
+  "2505": "Ubaid Ullah/3AB",
+  "2509": "Ubaid Ullah/3AB",
+  "2510": "Murad Ali",
+  "2513": "prince rai(HSEO leon 3A)",
+  "2521": "محمد وسيمHSE/SUP",
+  "2525": "Asif khan",
+  "2526": "Yasir khan (Leon Tech 3A)",
+  "2527": "Asif khan",
+  "2529": "prince rai(HSEO leon 3A)",
+  "2530": "prince rai(HSEO leon 3A)",
+  "2531": "Muhammad Kamran (JHGC) 3A",
+  "2532": "Ubaid Ullah/3AB",
+  "2535": "prince rai(HSEO leon 3A)",
+  "2538": "prince rai(HSEO leon 3A)",
+  "2540": "Yasir khan (Leon Tech 3A)",
+  "2541": "Ubaid Ullah/3AB",
+  "2543": "Ubaid Ullah/3AB",
+  "2544": "Ubaid Ullah/3AB",
+  "2547": "Ubaid Ullah/3AB",
+  "2548": "Muhammad Kamran (JHGC) 3A",
+  "2549": "Ubaid Ullah/3AB",
+  "2560": "prince rai(HSEO leon 3A)",
+  "2565": "Ubaid Ullah/3AB",
+  "2567": "Yasir khan (Leon Tech 3A)",
+  "2570": "Ubaid Ullah/3AB",
+  "2571": "Yasir khan (Leon Tech 3A)",
+  "2576": "Yasir khan (Leon Tech 3A)",
+  "2577": "Yasir khan (Leon Tech 3A)",
+  "2582": "prince rai(HSEO leon 3A)",
+  "2587": "Fazal Maula (Leon tech ph 3A)",
+  "2593": "Fazal Maula (Leon tech ph 3A)",
+  "2595": "Fazal Maula (Leon tech ph 3A)",
+  "2596": "محمد وسيمHSE/SUP",
+  "2597": "محمد وسيمHSE/SUP",
+  "2599": "Riaz",
+  "2601": "Ubaid Ullah/3AB",
+  "2602": "Fazal Maula (Leon tech ph 3A)",
+  "2605": "Fazal Maula (Leon tech ph 3A)",
+  "2606": "Fazal Maula (Leon tech ph 3A)",
+  "2611": "Murad Ali",
+  "2612": "Daud Shah",
+  "2613": "Ubaid Ullah/3AB",
+  "2614": "Ubaid Ullah/3AB",
+  "2615": "Ubaid Ullah/3AB",
+  "2621": "Ubaid Ullah/3AB",
+  "2622": "Ubaid Ullah/3AB",
+  "2624": "Fazal Maula (Leon tech ph 3A)",
+  "2625": "Ubaid Ullah/3AB",
+  "2626": "Ubaid Ullah/3AB",
+  "2629": "Yasir khan (Leon Tech 3A)",
+  "2630": "Fazal Maula (Leon tech ph 3A)",
+  "2634": "Murad Ali",
+  "2644": "Ubaid Ullah/3AB",
+  "2650": "Muhammad Kamran (JHGC) 3A",
+  "2652": "Muhammad Kamran (JHGC) 3A",
+  "2653": "محمد وسيمHSE/SUP",
+  "2662": "Ubaid Ullah/3AB",
+  "2666": "Muhammad Kamran (JHGC) 3A",
+  "2669": "Muhammad Kamran (JHGC) 3A",
+  "2670": "Muhammad Kamran (JHGC) 3A",
+  "2673": "Ubaid Ullah/3AB",
+  "2682": "Murad Ali",
+  "2684": "Noman Shah (BSGCC)",
+  "2685": "Murad Ali",
+  "2687": "Noman Shah (BSGCC)",
+  "2691": "Riaz",
+  "2693": "Noman Shah (BSGCC)",
+  "2694": "Noman Shah (BSGCC)",
+  "2700": "محمد وسيمHSE/SUP",
+  "2703": "Noman Shah (BSGCC)",
+  "2723": "Ubaid Ullah/3AB",
+  "2731": "Muhammad Kamran (JHGC) 3A",
+  "2733": "Ubaid Ullah/3AB",
+  "2734": "Muhammad Kamran (JHGC) 3A",
+  "2740": "Mohammed Hameeduddin",
+  "2741": "Mohammed Hameeduddin",
+  "2744": "Ubaid Ullah/3AB",
+  "2745": "Noman Shah (BSGCC)",
+  "2751": "Asif khan",
+  "2753": "Ubaid Ullah/3AB",
+  "2754": "Mohammed Hameeduddin",
+  "2756": "Ubaid Ullah/3AB",
+  "2762": "Noman Shah (BSGCC)",
+  "2763": "Ubaid Ullah/3AB",
+  "2764": "Ubaid Ullah/3AB",
+  "2765": "Ubaid Ullah/3AB",
+  "2766": "Ubaid Ullah/3AB",
+  "2767": "Ismail Sb HSE Manager CHEC",
+  "2768": "Yasir khan (Leon Tech 3A)",
+  "2797": "Muhammad Ashfaq (BSGCC)",
+  "2801": "Muhammad Kamran (JHGC) 3A",
+  "2802": "Noman Shah (BSGCC)",
+  "2807": "Ubaid Ullah/3AB",
+  "2816": "Ubaid Ullah/3AB",
+  "2827": "Ubaid Ullah/3AB",
+  "2837": "Muhammad Ashfaq (BSGCC)",
+  "2843": "Noman Shah (BSGCC)",
+  "8189": "Abdussamad"
+};
+const DEFAULT_VILLAS_VERSION = 2;
+function loadVillas(){
+  let stored = null;
+  try{
+    const raw = localStorage.getItem("hse_villas");
+    if(raw) stored = JSON.parse(raw);
+  }catch(e){}
+  const storedVersion = parseInt(localStorage.getItem("hse_villas_version") || "0", 10);
+  if(!stored){
+    localStorage.setItem("hse_villas", JSON.stringify(DEFAULT_VILLAS));
+    localStorage.setItem("hse_villas_version", String(DEFAULT_VILLAS_VERSION));
+    return {...DEFAULT_VILLAS};
+  }
+  if(storedVersion < DEFAULT_VILLAS_VERSION){
+    // دمج: أضف أي فيلا جديدة من القائمة المحدثة غير موجودة عندك، دون المساس بأي تعديل يدوي سويته
+    Object.keys(DEFAULT_VILLAS).forEach(k=>{
+      if(!(k in stored)) stored[k] = DEFAULT_VILLAS[k];
+    });
+    localStorage.setItem("hse_villas", JSON.stringify(stored));
+    localStorage.setItem("hse_villas_version", String(DEFAULT_VILLAS_VERSION));
+  }
+  return stored;
+}
+function saveVillas(v){
+  localStorage.setItem("hse_villas", JSON.stringify(v));
+}
+let villas = loadVillas();
+
+/* ---------- حالة الاختيار ---------- */
+const selected = new Set(); // "catkey|index"
+
+function itemKey(catKey, idx){ return catKey+"|"+idx; }
+
+function renderCategories(){
+  const wrap = document.getElementById("categoriesWrap");
+  wrap.innerHTML = "";
+  CATEGORIES.forEach(cat=>{
+    const det = document.createElement("details");
+    const sum = document.createElement("summary");
+    sum.innerHTML = `<span>${cat.ar} <span class="en">(${cat.en})</span></span><span class="count" id="count-${cat.key}"></span>`;
+    det.appendChild(sum);
+    const chipsWrap = document.createElement("div");
+    chipsWrap.className = "chips";
+    cat.items.forEach((it,idx)=>{
+      const chip = document.createElement("div");
+      chip.className = "chip"+(it.urgent?" urgent":"");
+      chip.dataset.key = itemKey(cat.key, idx);
+      chip.innerHTML = `${it.ar}<span class="en">${it.en}</span>`;
+      chip.addEventListener("click", ()=>{
+        const k = chip.dataset.key;
+        if(selected.has(k)){ selected.delete(k); chip.classList.remove("selected"); }
+        else { selected.add(k); chip.classList.add("selected"); }
+        updateCounts();
+      });
+      chipsWrap.appendChild(chip);
+    });
+    det.appendChild(chipsWrap);
+    wrap.appendChild(det);
+  });
+  updateCounts();
+}
+
+function updateCounts(){
+  CATEGORIES.forEach(cat=>{
+    const n = cat.items.filter((_,idx)=>selected.has(itemKey(cat.key,idx))).length;
+    const el = document.getElementById("count-"+cat.key);
+    if(n>0){ el.textContent = n; el.classList.add("show"); }
+    else { el.textContent=""; el.classList.remove("show"); }
+  });
+  const hint = document.getElementById("selCountHint");
+  hint.textContent = selected.size ? `(${selected.size} محدد)` : "";
+}
+
+/* ---------- الفيلا والمسؤول ---------- */
+function refreshVillaDatalist(){
+  const dl = document.getElementById("villaOptions");
+  dl.innerHTML = "";
+  Object.keys(villas).forEach(num=>{
+    const opt = document.createElement("option");
+    opt.value = num;
+    dl.appendChild(opt);
+  });
+}
+function respLine(showEmpty){
+  const num = document.getElementById("villaInput").value.trim();
+  if(!num) return null;
+  const name = villas.hasOwnProperty(num) ? villas[num] : undefined;
+  if(name){
+    return "المسؤول عن الفيلا: @"+name;
+  }
+  return "المسؤول عن الفيلا: غير محدد لدي حاليًا.";
+}
+document.getElementById("villaInput").addEventListener("input", ()=>{
+  const chip = document.getElementById("respChip");
+  const num = document.getElementById("villaInput").value.trim();
+  if(!num){ chip.innerHTML = "اكتب رقم الفيلا لعرض المسؤول"; return; }
+  const name = villas.hasOwnProperty(num) ? villas[num] : undefined;
+  chip.innerHTML = name ? `الفيلا <b>${num}</b> — المسؤول: <b>@${name}</b>`
+                        : `الفيلا <b>${num}</b> — المسؤول: <b>غير محدد لدي حاليًا</b>`;
+});
+
+/* ---------- إدارة جدول المسؤولين ---------- */
+function renderVillaManage(){
+  const wrap = document.getElementById("villaListWrap");
+  wrap.innerHTML = "";
+  Object.keys(villas).forEach(num=>{
+    const row = document.createElement("div");
+    row.className = "villa-item";
+    const nameDisp = villas[num] ? "@"+villas[num] : "غير محدد لدي حاليًا";
+    row.innerHTML = `<span><span class="num">${num}</span> — ${nameDisp}</span>`;
+    const del = document.createElement("button");
+    del.textContent = "حذف";
+    del.addEventListener("click", ()=>{
+      delete villas[num];
+      saveVillas(villas);
+      renderVillaManage();
+      refreshVillaDatalist();
+    });
+    row.appendChild(del);
+    wrap.appendChild(row);
+  });
+  refreshVillaDatalist();
+}
+document.getElementById("mgSave").addEventListener("click", ()=>{
+  const num = document.getElementById("mgNum").value.trim();
+  const name = document.getElementById("mgName").value.trim().replace(/^@/,"");
+  if(!num) return;
+  villas[num] = name; // اسم فارغ = غير محدد
+  saveVillas(villas);
+  document.getElementById("mgNum").value = "";
+  document.getElementById("mgName").value = "";
+  renderVillaManage();
+  document.getElementById("villaInput").dispatchEvent(new Event("input"));
+});
+
+/* ---------- مزامنة Google Sheets (اختياري) ---------- */
+function getSyncUrl(){
+  return localStorage.getItem("hse_sync_url") || "";
+}
+function setSyncStatus(msg, kind){
+  const el = document.getElementById("syncStatus");
+  el.textContent = msg;
+  el.className = "sync-status" + (kind ? " "+kind : "");
+}
+function refreshSyncUI(){
+  const url = getSyncUrl();
+  document.getElementById("syncUrlInput").value = url;
+  if(!url){
+    setSyncStatus("غير مفعّلة — الموقع يعمل محليًا فقط على هذا الجهاز.");
+  } else if(!navigator.onLine){
+    setSyncStatus("الرابط محفوظ، لكن لا يوجد اتصال إنترنت الآن — يعمل من النسخة المحلية.");
+  } else {
+    setSyncStatus("مفعّلة. اضغط تنزيل أو رفع لمزامنة الجدول.", "ok");
+  }
+}
+document.getElementById("syncSaveUrlBtn").addEventListener("click", ()=>{
+  const url = document.getElementById("syncUrlInput").value.trim();
+  localStorage.setItem("hse_sync_url", url);
+  refreshSyncUI();
+});
+document.getElementById("syncPullBtn").addEventListener("click", ()=>pullFromSheet(true));
+document.getElementById("syncPushBtn").addEventListener("click", ()=>pushToSheet(true));
+
+function mergeTemplateItem(list, item){
+  const exists = list.some(x => x.ar.trim()===item.ar.trim() && x.en.trim()===item.en.trim());
+  if(!exists) list.push(item);
+}
+function pullFromSheet(manual){
+  const url = getSyncUrl();
+  if(!url){ if(manual) setSyncStatus("الرجاء حفظ رابط المزامنة أولًا.", "err"); return; }
+  if(!navigator.onLine){ if(manual) setSyncStatus("لا يوجد اتصال إنترنت الآن.", "err"); return; }
+  setSyncStatus("جاري التنزيل...");
+  fetch(url, {method:"GET"})
+    .then(r=>r.json())
+    .then(remote=>{
+      const remoteVillas = remote.villas || {};
+      const remoteTemplates = remote.templates || {};
+      // دمج الفلل: بيانات الشيت لها الأولوية عند التعارض
+      Object.keys(remoteVillas).forEach(k=>{ villas[k] = remoteVillas[k]; });
+      saveVillas(villas);
+      // دمج القوالب: إضافة أي قالب من الشيت غير موجود عندك محليًا (بدون تكرار)
+      Object.keys(remoteTemplates).forEach(catKey=>{
+        if(!customItems[catKey]) customItems[catKey] = [];
+        remoteTemplates[catKey].forEach(item=>mergeTemplateItem(customItems[catKey], item));
+      });
+      saveCustomItems(customItems);
+      applyCustomItems();
+      renderCategories();
+      renderCustomItemsList();
+      renderVillaManage();
+      document.getElementById("villaInput").dispatchEvent(new Event("input"));
+      const tplCount = Object.values(remoteTemplates).reduce((a,l)=>a+l.length,0);
+      setSyncStatus("تم التنزيل والدمج بنجاح ✓ (" + Object.keys(remoteVillas).length + " فيلا، " + tplCount + " قالب)", "ok");
+    })
+    .catch(()=>{
+      setSyncStatus("تعذر التنزيل. تأكد من الرابط ومن صلاحيات النشر (Anyone can access).", "err");
+    });
+}
+function pushToSheet(manual){
+  const url = getSyncUrl();
+  if(!url){ if(manual) setSyncStatus("الرجاء حفظ رابط المزامنة أولًا.", "err"); return; }
+  if(!navigator.onLine){ if(manual) setSyncStatus("لا يوجد اتصال إنترنت الآن.", "err"); return; }
+  setSyncStatus("جاري الرفع...");
+  fetch(url, {
+    method:"POST",
+    headers: {"Content-Type":"text/plain;charset=utf-8"}, // يتجنب مشاكل CORS مع Apps Script
+    body: JSON.stringify({villas: villas, templates: customItems})
+  })
+    .then(r=>r.json())
+    .then(()=>{
+      const tplCount = Object.values(customItems).reduce((a,l)=>a+l.length,0);
+      setSyncStatus("تم رفع الجدول والقوالب للشيت بنجاح ✓ (" + Object.keys(villas).length + " فيلا، " + tplCount + " قالب)", "ok");
+    })
+    .catch(()=>{
+      setSyncStatus("تعذر الرفع. تأكد من الرابط ومن صلاحيات النشر (Anyone can access).", "err");
+    });
+}
+refreshSyncUI();
+window.addEventListener("online", refreshSyncUI);
+window.addEventListener("offline", refreshSyncUI);
+// محاولة تنزيل تلقائي هادئ عند فتح الصفحة لو الرابط محفوظ ومتصل بالنت
+if(getSyncUrl() && navigator.onLine){
+  pullFromSheet(false);
+}
+
+
+/* ---------- توليد الملاحظة ---------- */
+function generateNote(){
+  const chosen = [];
+  CATEGORIES.forEach(cat=>{
+    cat.items.forEach((it,idx)=>{
+      if(selected.has(itemKey(cat.key,idx))) chosen.push({...it, cat});
+    });
+  });
+  if(chosen.length===0){
+    alert("اختر مخالفة واحدة على الأقل قبل المعاينة.");
+    return null;
+  }
+  const hazAr = chosen.map(c=>c.ar).join("، ");
+  const hazEn = chosen.map(c=>c.en).join(", ");
+  const urgent = chosen.some(c=>c.urgent);
+  // اجمع جمل الإجراء التصحيحي من التصنيفات المختارة (بدون تكرار)
+  const correctiveArSet = [...new Set(chosen.map(c=>c.cat.corrective_ar))];
+  const correctiveEnSet = [...new Set(chosen.map(c=>c.cat.corrective_en))];
+  let correctiveAr, correctiveEn;
+  if(urgent){
+    correctiveAr = "يجب إيقاف العمل فورًا وتصحيح جميع المخالفات المذكورة أعلاه قبل استئناف العمل.";
+    correctiveEn = "Work must be stopped immediately, and all violations above corrected before resuming work.";
+  } else if(correctiveArSet.length===1){
+    correctiveAr = correctiveArSet[0];
+    correctiveEn = correctiveEnSet[0];
+  } else {
+    correctiveAr = "يجب تصحيح جميع المخالفات المذكورة أعلاه في أقرب وقت ممكن.";
+    correctiveEn = "All violations above must be corrected as soon as possible.";
+  }
+  const arabicLine = hazAr + "، " + correctiveAr;
+  const englishOnly = hazEn.charAt(0).toUpperCase() + hazEn.slice(1) + ". " + correctiveEn;
+  const englishBracketed = "(" + englishOnly + ")";
+  const resp = respLine();
+  let full = arabicLine + "\n" + englishBracketed;
+  if(resp) full += "\n" + resp;
+  return { full, englishOnly };
+}
+
+function copyToClipboard(text, onDone){
+  navigator.clipboard.writeText(text).then(onDone).catch(()=>{
+    // fallback لبعض المتصفحات القديمة بدون إنترنت
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    onDone();
+  });
+}
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 1500);
+}
+
+let lastNote = null;
+
+document.getElementById("genBtn").addEventListener("click", ()=>{
+  const note = generateNote();
+  if(!note) return;
+  lastNote = note;
+  document.getElementById("previewText").textContent = note.full;
+  document.getElementById("modal").classList.add("open");
+});
+document.getElementById("closeModal").addEventListener("click", ()=>{
+  document.getElementById("modal").classList.remove("open");
+});
+document.getElementById("copyBtn").addEventListener("click", ()=>{
+  if(!lastNote) return;
+  copyToClipboard(lastNote.full, ()=>showToast("تم نسخ الملاحظة كاملة ✓"));
+});
+document.getElementById("copyEnBtn").addEventListener("click", ()=>{
+  if(!lastNote) return;
+  copyToClipboard(lastNote.englishOnly, ()=>showToast("تم نسخ النص الإنجليزي فقط ✓"));
+});
+document.getElementById("clearBtn").addEventListener("click", ()=>{
+  selected.clear();
+  document.querySelectorAll(".chip.selected").forEach(c=>c.classList.remove("selected"));
+  document.getElementById("villaInput").value = "";
+  document.getElementById("villaInput").dispatchEvent(new Event("input"));
+  updateCounts();
+});
+
+/* ---------- تشغيل ---------- */
+applyCustomItems();
+populateNewCatSelect();
+renderCustomItemsList();
+renderCategories();
+renderVillaManage();
+</script>
+</body>
+</html>
