@@ -335,6 +335,14 @@ pre.preview{
   background:var(--panel-2);border-radius:10px;padding:10px 12px;font-family:var(--mono);font-size:12.5px;line-height:1.6;max-height:300px;overflow:auto;
 }
 
+/* ---------- بطاقة تحديث كود الشيت (تظهر فقط عند الحاجة) ---------- */
+.fix{border:1.5px solid var(--accent);background:var(--accent-soft)}
+.fix-p{margin:0 0 8px;font-size:13.5px;line-height:1.75}
+.steps{margin:0 0 12px;padding-inline-start:20px;font-size:13.5px;line-height:1.9}
+.steps li{margin-bottom:4px}
+.steps .k{display:inline-block;direction:ltr;unicode-bidi:isolate;white-space:nowrap;font-family:var(--mono);font-size:11.5px;line-height:1.7;
+  background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:0 5px}
+
 /* ---------- ملاحظاتك الخاصة ---------- */
 .add-own{width:100%;margin-top:10px;border-style:dashed;color:var(--muted);padding:12px}
 .own{font-size:10.5px;font-weight:700;border-radius:6px;padding:1px 6px;flex:none;margin-top:2px;background:var(--accent-soft);color:var(--ink);border:1px solid var(--accent)}
@@ -392,6 +400,23 @@ body.no-dock .toast{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
 
   <!-- ============ ملاحظة جديدة ============ -->
   <section class="view" id="view-new">
+    <!-- يظهر فقط إذا الشيت ما زال على كود Apps Script القديم، ويختفي نهائيًا أول ما يتحدّث -->
+    <div class="card fix" id="fixCard" hidden>
+      <div class="card-h"><h2>خطوة وحدة عشان تنحفظ ملاحظاتك بالشيت</h2></div>
+      <p class="fix-p">الشيت مربوط، لكن كود Apps Script اللي داخله هو القديم (حق الفلل والقوالب) وما يعرف يحفظ الملاحظات. ملاحظاتك محفوظة بالجوال (<b id="fixCount">0</b> بانتظار الرفع) وبترتفع لحالها أول ما تحدّثه.</p>
+      <ol class="steps">
+        <li>اضغط <b>نسخ الكود الجديد</b> تحت.</li>
+        <li>افتح الشيت (من الكمبيوتر أسهل) ← <span class="k">Extensions</span> ← <span class="k">Apps Script</span> ← احذف الكود القديم كله والصق الجديد ← <span class="k">Save</span></li>
+        <li>من القائمة اللي فوق اختر <span class="k">setup</span> ← <span class="k">Run</span> ← وافق على الصلاحيات. إذا طلع لك تحذير من Google: <span class="k">Advanced</span> ← <span class="k">Go to …</span> ← <span class="k">Allow</span></li>
+        <li><span class="k">Deploy</span> ← <span class="k">Manage deployments</span> ← <span class="k">✎</span> ← <span class="k">Version: New version</span> ← <span class="k">Deploy</span><br>(لا تختار <span class="k">New deployment</span> عشان يبقى نفس الرابط)</li>
+      </ol>
+      <div class="row">
+        <button class="btn primary" id="copyGasBtn" type="button">نسخ الكود الجديد</button>
+        <button class="btn" id="fixOpenSheet" type="button">فتح الشيت</button>
+        <button class="btn" id="fixRetry" type="button">حدّثته — تأكّد الآن</button>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-h">
         <h2>المنطقة</h2>
@@ -483,7 +508,7 @@ body.no-dock .toast{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
     </div>
     <div class="dock-body" id="dockBody" hidden>
       <div class="out">
-        <div class="out-label"><span>النص اللي بينسخ (تقدر تعدّله)</span><span class="row" style="gap:6px"><button class="btn sm ghost" id="saveTplBtn" type="button" hidden>+ احفظها بالقائمة</button><button class="btn sm ghost" id="regenBtn" type="button" hidden>↺ إعادة الصياغة</button></span></div>
+        <div class="out-label"><span>النص اللي بينسخ · صيغته تتغير كل مرة</span><span class="row" style="gap:6px"><button class="btn sm ghost" id="shuffleBtn" type="button" hidden>🔀 صيغة ثانية</button><button class="btn sm ghost" id="saveTplBtn" type="button" hidden>+ احفظها بالقائمة</button><button class="btn sm ghost" id="regenBtn" type="button" hidden>↺ إعادة الصياغة</button></span></div>
         <textarea class="field" id="outText" rows="7" placeholder="Pick templates above, or type your own observation here…"></textarea>
         <div class="hint" id="locPreview" style="margin-top:6px"></div>
       </div>
@@ -517,6 +542,444 @@ body.no-dock .toast{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <div class="modal" id="modal" hidden><div class="modal-in" id="modalIn"></div></div>
 <input type="file" id="photoInput" accept="image/*" multiple hidden>
+
+<!-- كود Apps Script الجديد (لزر «نسخ الكود الجديد» فقط) -->
+<script type="text/plain" id="gasCode">/**
+ * دفتر ملاحظات HSE — SEDRA · Google Sheets backend (v3.1)
+ * ------------------------------------------------------------------
+ * مرة وحدة فقط:
+ * 1) احذف الكود القديم كله والصق هذا مكانه ← Save
+ * 2) اختر setup من القائمة فوق ← Run ← وافق على الصلاحيات
+ * 3) Deploy ← Manage deployments ← ✎ ← Version: New version ← Deploy   (الرابط يبقى نفسه)
+ * يضيف تبويبات Observations · Summary · Custom Templates — ولا يغيّر تبويبات Villas / Templates القديمة
+ * (ملاحظاتك الخاصة القديمة في Templates تنقرأ وتظهر في الصفحة الجديدة).
+ */
+var SHEET_ID = '1GVG6mwqdIGwz3Friq5JOcIc94LC7kMtJ02wIWjZ2JZE';
+var APP = 'sedra-hse';
+var VERSION = 3;
+var OBS_TAB = 'Observations';
+var TPL_TAB = 'Custom Templates';
+var SUM_TAB = 'Summary';
+var LEGACY_TPL_TAB = 'Templates';
+var PHOTO_FOLDER = 'SEDRA HSE Photos';
+/* تصنيفات الصفحة القديمة ← التصنيفات الجديدة */
+var LEGACY_CAT = {ppe: 'ppe', helmet: 'ppe', shoes: 'ppe', fall: 'wah', height: 'wah', scaffold: 'scaf',
+  excavation: 'exc', electrical: 'elec', fire: 'fire', housekeeping: 'hk', weather: 'wel', access: 'cond',
+  acts: 'acts', conditions: 'cond', barricading: 'open', lifting: 'lift', tools: 'tools'};
+
+var OBS_COLS = [
+  ['id', 'Ref'], ['date', 'Date'], ['time', 'Time'], ['phase', 'Phase'], ['area', 'Area'], ['loc', 'Location'],
+  ['category', 'Category'], ['risk', 'Risk'], ['text', 'Observation'], ['ar', 'Arabic summary'],
+  ['status', 'Status'], ['closedAt', 'Closed on'], ['closeNote', 'Close-out note'], ['repeated', 'Repeated'],
+  ['photos', 'Photos'], ['preview', 'Preview'], ['gps', 'GPS'], ['items', 'Template IDs'],
+  ['device', 'Device'], ['createdAt', 'Created'], ['updatedAt', 'Updated']
+];
+var TPL_COLS = [['id', 'ID'], ['cat', 'Category'], ['risk', 'Risk'], ['ar', 'Arabic'], ['np', 'English'],
+  ['act', 'Action'], ['hz', 'Hazards'], ['updatedAt', 'Updated'], ['deleted', 'Deleted']];
+var RISK_NAME = {H: 'High', M: 'Medium', L: 'Low', G: 'Good practice'};
+var RISK_CODE = {'High': 'H', 'Medium': 'M', 'Low': 'L', 'Good practice': 'G'};
+
+/* ---------------- entry points ---------------- */
+function doGet(e) {
+  var p = (e && e.parameter) || {};
+  try {
+    var ss = ss_();
+    ensure_(ss);
+    var base = {ok: true, app: APP, version: VERSION, sheetName: ss.getName(), sheetUrl: ss.getUrl()};
+    if (p.action === 'list') {
+      base.observations = listObs_(ss, p.since || '', Number(p.limit) || 1500);
+      base.templates = listTpl_(ss);
+    } else {
+      base.time = new Date().toISOString();
+    }
+    return out_(base);
+  } catch (err) {
+    return out_({ok: false, app: APP, error: msg_(err)});
+  }
+}
+
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(30000); } catch (x) { return out_({ok: false, app: APP, error: 'Sheet busy, retrying'}); }
+  try {
+    var body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    if (!body.ops) return out_({ok: false, app: APP, legacy: true, error: 'Old page version. Please update the HSE page.'});
+    var ss = ss_();
+    var sh = ensure_(ss);
+    var results = body.ops.map(function (op) {
+      try {
+        if (op.op === 'upsertObs') return upsertObs_(sh, op.obs);
+        if (op.op === 'deleteObs') return deleteObs_(sh, op.id);
+        if (op.op === 'photo') return photo_(sh, op);
+        if (op.op === 'upsertTpl') return upsertTpl_(ss, op.tpl);
+        return {ok: false, error: 'Unknown operation'};
+      } catch (err) {
+        return {ok: false, error: msg_(err)};
+      }
+    });
+    try { refreshSummary_(ss); } catch (x) {}
+    return out_({ok: true, app: APP, version: VERSION, results: results});
+  } catch (err) {
+    return out_({ok: false, app: APP, error: msg_(err)});
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** شغّلها مرة وحدة من المحرر لتجهيز التبويبات وأخذ الصلاحيات */
+function setup() {
+  var ss = ss_();
+  ensure_(ss);
+  folder_();
+  refreshSummary_(ss);
+  Logger.log('Ready: ' + ss.getUrl());
+  return 'Ready';
+}
+
+function onOpen() {
+  try {
+    SpreadsheetApp.getUi().createMenu('HSE')
+      .addItem('تحديث الملخص', 'refreshSummary')
+      .addItem('تجهيز / إصلاح التبويبات', 'setup')
+      .addToUi();
+  } catch (x) {}
+}
+
+function refreshSummary() { refreshSummary_(ss_()); }
+
+/** أي تعديل يدوي في تبويب Observations يحدّث وقت التعديل عشان ينتقل للجوال */
+function onEdit(e) {
+  try {
+    var sh = e.range.getSheet();
+    if (sh.getName() !== OBS_TAB) return;
+    var r0 = Math.max(2, e.range.getRow());
+    var r1 = e.range.getRow() + e.range.getNumRows() - 1;
+    if (r1 < 2) return;
+    var rows = r1 - r0 + 1;
+    var updCol = col_(OBS_COLS, 'updatedAt') + 1;
+    if (e.range.getColumn() === updCol && e.range.getNumColumns() === 1) return;
+    var now = new Date().toISOString();
+    var upd = [];
+    for (var i = 0; i < rows; i++) upd.push([now]);
+    sh.getRange(r0, updCol, rows, 1).setNumberFormat('@').setValues(upd);
+    var stCol = col_(OBS_COLS, 'status') + 1, clCol = col_(OBS_COLS, 'closedAt') + 1;
+    if (e.range.getColumn() <= stCol && e.range.getLastColumn() >= stCol) {
+      var tz = sh.getParent().getSpreadsheetTimeZone();
+      var st = sh.getRange(r0, stCol, rows, 1).getValues();
+      var cl = sh.getRange(r0, clCol, rows, 1).getValues();
+      for (var j = 0; j < rows; j++) {
+        if (String(st[j][0]) === 'Closed' && !cl[j][0]) cl[j][0] = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm');
+        if (String(st[j][0]) === 'Open') cl[j][0] = '';
+      }
+      sh.getRange(r0, clCol, rows, 1).setNumberFormat('@').setValues(cl);
+    }
+  } catch (x) {}
+}
+
+/* ---------------- sheets ---------------- */
+function ss_() {
+  try {
+    var a = SpreadsheetApp.getActiveSpreadsheet();
+    if (a) return a;
+  } catch (x) {}
+  return SpreadsheetApp.openById(SHEET_ID);
+}
+
+function ensure_(ss) {
+  var sh = ss.getSheetByName(OBS_TAB);
+  if (!sh) {
+    sh = ss.insertSheet(OBS_TAB, 0);
+    var n = OBS_COLS.length;
+    sh.getRange(1, 1, 1, n).setValues([OBS_COLS.map(function (c) { return c[1]; })])
+      .setFontWeight('bold').setBackground('#1b1d20').setFontColor('#ffffff').setVerticalAlignment('middle');
+    sh.setFrozenRows(1);
+    sh.setRowHeight(1, 30);
+    var widths = {id: 150, date: 92, time: 56, phase: 56, area: 56, loc: 90, category: 190, risk: 84, text: 440, ar: 300,
+      status: 80, closedAt: 128, closeNote: 220, repeated: 74, photos: 210, preview: 130, gps: 190, items: 120,
+      device: 80, createdAt: 160, updatedAt: 160};
+    Object.keys(widths).forEach(function (k) { sh.setColumnWidth(col_(OBS_COLS, k) + 1, widths[k]); });
+    var max = sh.getMaxRows();
+    sh.getRange(2, 1, max - 1, n).setVerticalAlignment('top');
+    sh.getRange(2, col_(OBS_COLS, 'text') + 1, max - 1, 2).setWrap(true);
+    sh.getRange(2, col_(OBS_COLS, 'closeNote') + 1, max - 1, 1).setWrap(true);
+    var stRange = sh.getRange(2, col_(OBS_COLS, 'status') + 1, max - 1, 1);
+    stRange.setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(['Open', 'Closed'], true).setAllowInvalid(true).build());
+    var rkRange = sh.getRange(2, col_(OBS_COLS, 'risk') + 1, max - 1, 1);
+    var rule = function (txt, bg, fg, rng) {
+      return SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo(txt).setBackground(bg).setFontColor(fg).setRanges([rng]).build();
+    };
+    sh.setConditionalFormatRules([
+      rule('High', '#f8d7d4', '#b3261e', rkRange), rule('Medium', '#fde5cc', '#9a4f00', rkRange),
+      rule('Low', '#d6e7f8', '#1d5fa3', rkRange), rule('Good practice', '#d4f0e1', '#1b7a4b', rkRange),
+      rule('Open', '#fff2bf', '#5c4a00', stRange), rule('Closed', '#d4f0e1', '#1b7a4b', stRange)
+    ]);
+  }
+  var t = ss.getSheetByName(TPL_TAB);
+  if (!t) {
+    t = ss.insertSheet(TPL_TAB);
+    t.getRange(1, 1, 1, TPL_COLS.length).setValues([TPL_COLS.map(function (c) { return c[1]; })])
+      .setFontWeight('bold').setBackground('#1b1d20').setFontColor('#ffffff');
+    t.setFrozenRows(1);
+    t.getRange(1, 1, t.getMaxRows(), TPL_COLS.length).setNumberFormat('@');
+    t.setColumnWidth(4, 240); t.setColumnWidth(5, 340); t.setColumnWidth(6, 340);
+  }
+  if (!ss.getSheetByName(SUM_TAB)) ss.insertSheet(SUM_TAB, 1);
+  return sh;
+}
+
+function col_(cols, key) {
+  for (var i = 0; i < cols.length; i++) if (cols[i][0] === key) return i;
+  return -1;
+}
+
+function findRow_(sh, id) {
+  var last = sh.getLastRow();
+  if (!id || last < 2) return 0;
+  var hit = sh.getRange(2, 1, last - 1, 1).createTextFinder(String(id)).matchEntireCell(true).findNext();
+  return hit ? hit.getRow() : 0;
+}
+
+function ensureRows_(sh, row) {
+  var max = sh.getMaxRows();
+  if (row > max) sh.insertRowsAfter(max, Math.max(200, row - max));
+}
+
+function mergeLinks_(cur, add) {
+  var list = String(cur || '').split(/\s+/).filter(function (x) { return x; });
+  (add || []).forEach(function (u) { if (u && list.indexOf(u) < 0) list.push(u); });
+  return list.join('\n');
+}
+
+/* ---------------- observations ---------------- */
+function upsertObs_(sh, o) {
+  if (!o || !o.id) return {ok: false, error: 'Missing observation id'};
+  var n = OBS_COLS.length;
+  var row = findRow_(sh, o.id);
+  var cur = row ? sh.getRange(row, 1, 1, n).getValues()[0] : null;
+  if (cur) {
+    var curUpd = String(cur[col_(OBS_COLS, 'updatedAt')] || '');
+    if (curUpd && o.updatedAt && curUpd > String(o.updatedAt)) return {ok: true, id: o.id, skipped: 'newer-in-sheet'};
+  } else {
+    row = sh.getLastRow() + 1;
+    ensureRows_(sh, row);
+  }
+  var v = {
+    id: o.id, date: o.date || '', time: o.time || '', phase: o.phase || '', area: o.area || '', loc: o.loc || '',
+    category: o.catNames || '', risk: RISK_NAME[o.risk] || o.risk || '', text: o.text || '', ar: o.ar || '',
+    status: o.status === 'closed' ? 'Closed' : 'Open', closedAt: o.closedAt || '', closeNote: o.closeNote || '',
+    repeated: o.repeated ? 'Yes' : '', photos: mergeLinks_(cur ? cur[col_(OBS_COLS, 'photos')] : '', o.photoUrls),
+    gps: o.gps ? 'https://maps.google.com/?q=' + o.gps : '', items: (o.items || []).join(','),
+    device: o.device || '', createdAt: o.createdAt || '', updatedAt: o.updatedAt || new Date().toISOString()
+  };
+  var pv = col_(OBS_COLS, 'preview');
+  var left = OBS_COLS.slice(0, pv).map(function (c) { return v[c[0]]; });
+  var right = OBS_COLS.slice(pv + 1).map(function (c) { return v[c[0]]; });
+  // نص صريح (@) عشان الشيت ما يحوّل التاريخ/الوقت/رقم المرحلة تلقائيًا
+  sh.getRange(row, 1, 1, left.length).setNumberFormat('@').setValues([left]);
+  sh.getRange(row, pv + 2, 1, right.length).setNumberFormat('@').setValues([right]);
+  return {ok: true, id: o.id, row: row};
+}
+
+function deleteObs_(sh, id) {
+  var row = findRow_(sh, id);
+  if (row) sh.deleteRow(row);
+  return {ok: true, id: id, deleted: !!row};
+}
+
+function photo_(sh, op) {
+  if (!op || !op.id || !op.data) return {ok: false, error: 'Empty photo'};
+  var folder = folder_();
+  var name = op.name || (op.id + '_' + (op.idx || 1) + '.jpg');
+  var file;
+  var it = folder.getFilesByName(name);
+  if (it.hasNext()) {
+    file = it.next();
+  } else {
+    file = folder.createFile(Utilities.newBlob(Utilities.base64Decode(op.data), op.mime || 'image/jpeg', name));
+    try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (x) {}
+  }
+  var url = 'https://drive.google.com/file/d/' + file.getId() + '/view';
+  var row = findRow_(sh, op.id);
+  if (row) {
+    var pc = col_(OBS_COLS, 'photos') + 1;
+    sh.getRange(row, pc).setValue(mergeLinks_(sh.getRange(row, pc).getValue(), [url]));
+    var prev = sh.getRange(row, col_(OBS_COLS, 'preview') + 1);
+    if (!prev.getFormula()) {
+      prev.setFormula('=IMAGE("https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w400")');
+      sh.setRowHeight(row, 96);
+    }
+  }
+  return {ok: true, id: op.id, url: url};
+}
+
+function folder_() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty('PHOTO_FOLDER_ID');
+  if (id) {
+    try { return DriveApp.getFolderById(id); } catch (x) {}
+  }
+  var it = DriveApp.getFoldersByName(PHOTO_FOLDER);
+  var f = it.hasNext() ? it.next() : DriveApp.createFolder(PHOTO_FOLDER);
+  props.setProperty('PHOTO_FOLDER_ID', f.getId());
+  return f;
+}
+
+function listObs_(ss, since, limit) {
+  var sh = ss.getSheetByName(OBS_TAB);
+  var last = sh.getLastRow();
+  if (last < 2) return [];
+  var vals = sh.getRange(2, 1, last - 1, OBS_COLS.length).getValues();
+  var tz = ss.getSpreadsheetTimeZone();
+  var out = [];
+  for (var i = vals.length - 1; i >= 0 && out.length < limit; i--) {
+    var r = vals[i], o = {};
+    for (var c = 0; c < OBS_COLS.length; c++) {
+      var val = r[c];
+      if (val instanceof Date) val = Utilities.formatDate(val, tz, OBS_COLS[c][0] === 'time' ? 'HH:mm' : 'yyyy-MM-dd');
+      o[OBS_COLS[c][0]] = val === null || val === undefined ? '' : String(val);
+    }
+    if (!o.id) continue;
+    if (since && o.date < since) continue;
+    out.push({
+      id: o.id, date: o.date, time: o.time, phase: o.phase, area: o.area, loc: o.loc,
+      category: o.category, risk: RISK_CODE[o.risk] || 'M', text: o.text, ar: o.ar,
+      status: o.status.toLowerCase() === 'closed' ? 'closed' : 'open', closedAt: o.closedAt, closeNote: o.closeNote,
+      repeated: o.repeated.toLowerCase() === 'yes',
+      photoUrls: o.photos.split(/\s+/).filter(function (x) { return x; }),
+      gps: o.gps.replace('https://maps.google.com/?q=', ''),
+      items: o.items.split(',').filter(function (x) { return x; }),
+      device: o.device, createdAt: o.createdAt, updatedAt: o.updatedAt
+    });
+  }
+  return out;
+}
+
+/* ---------------- templates ---------------- */
+function upsertTpl_(ss, t) {
+  if (!t || !t.id) return {ok: false, error: 'Missing template id'};
+  var sh = ss.getSheetByName(TPL_TAB);
+  var n = TPL_COLS.length;
+  var row = findRow_(sh, t.id);
+  if (row) {
+    var cur = sh.getRange(row, 1, 1, n).getValues()[0];
+    if (String(cur[7] || '') > String(t.updatedAt || '')) return {ok: true, id: t.id, skipped: 'newer-in-sheet'};
+  } else {
+    row = sh.getLastRow() + 1;
+    ensureRows_(sh, row);
+  }
+  sh.getRange(row, 1, 1, n).setNumberFormat('@').setValues([[
+    t.id, t.cat || '', t.risk || '', t.ar || '', t.np || '', t.act || '', t.hz || '',
+    t.updatedAt || new Date().toISOString(), t.deleted ? 'Yes' : ''
+  ]]);
+  return {ok: true, id: t.id};
+}
+
+function listTpl_(ss) {
+  var sh = ss.getSheetByName(TPL_TAB);
+  var last = sh.getLastRow();
+  var list = last < 2 ? [] : sh.getRange(2, 1, last - 1, TPL_COLS.length).getValues().map(function (r) {
+    return {id: String(r[0]), cat: String(r[1]), risk: String(r[2]), ar: String(r[3]), np: String(r[4]), act: String(r[5]),
+      hz: String(r[6]), updatedAt: String(r[7]), deleted: String(r[8]).toLowerCase() === 'yes'};
+  }).filter(function (t) { return t.id; });
+  var seen = {};
+  list.forEach(function (t) { seen[t.id] = true; });
+  try {
+    legacyTpl_(ss).forEach(function (t) { if (!seen[t.id]) { seen[t.id] = true; list.push(t); } });
+  } catch (x) {}
+  return list;
+}
+
+/** ملاحظاتك الخاصة من الصفحة القديمة (تبويب Templates) — قراءة فقط، وأي تعديل/حذف لها ينحفظ في Custom Templates */
+function legacyTpl_(ss) {
+  var sh = ss.getSheetByName(LEGACY_TPL_TAB);
+  if (!sh || sh.getLastRow() < 2) return [];
+  return sh.getRange(2, 1, sh.getLastRow() - 1, 4).getValues().map(function (r) {
+    var key = String(r[0] || '').trim(), ar = String(r[1] || '').trim(), en = String(r[2] || '').trim();
+    if (!key || !ar || !en) return null;
+    var np = en.replace(/^observed\s+/i, '').replace(/[.\s]+$/, '');
+    if (/^[A-Z][a-z]/.test(np)) np = np.charAt(0).toLowerCase() + np.slice(1);
+    return {id: 'L-' + hash_(key + '|' + ar + '|' + en), cat: LEGACY_CAT[key] || 'cond',
+      risk: String(r[3]).toLowerCase() === 'true' ? 'H' : 'M', ar: ar, np: np, act: '', hz: '',
+      updatedAt: '2000-01-01T00:00:00.000Z', deleted: false, legacy: true};
+  }).filter(function (t) { return t; });
+}
+
+function hash_(s) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, s, Utilities.Charset.UTF_8).slice(0, 5)
+    .map(function (b) { return ('0' + (b & 255).toString(16)).slice(-2); }).join('');
+}
+
+/* ---------------- summary tab ---------------- */
+function refreshSummary_(ss) {
+  var sh = ss.getSheetByName(OBS_TAB);
+  var sum = ss.getSheetByName(SUM_TAB) || ss.insertSheet(SUM_TAB);
+  var tz = ss.getSpreadsheetTimeZone();
+  var today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  var last = sh.getLastRow();
+  var vals = last > 1 ? sh.getRange(2, 1, last - 1, OBS_COLS.length).getValues() : [];
+  var iD = col_(OBS_COLS, 'date'), iA = col_(OBS_COLS, 'area'), iC = col_(OBS_COLS, 'category'),
+      iR = col_(OBS_COLS, 'risk'), iS = col_(OBS_COLS, 'status');
+  var all = {n: 0, open: 0, H: 0}, tod = {n: 0, open: 0, H: 0}, cats = {}, areas = {}, days = {};
+  vals.forEach(function (r) {
+    if (!r[0]) return;
+    var d = r[iD] instanceof Date ? Utilities.formatDate(r[iD], tz, 'yyyy-MM-dd') : String(r[iD]);
+    var open = String(r[iS]) !== 'Closed', high = String(r[iR]) === 'High';
+    all.n++; if (open) all.open++; if (high) all.H++;
+    if (d === today) { tod.n++; if (open) tod.open++; if (high) tod.H++; }
+    String(r[iC] || 'Other').split(' / ').forEach(function (c) { bump_(cats, c || 'Other', open); });
+    bump_(areas, String(r[iA] || '—'), open);
+    bump_(days, d, open);
+  });
+  var rate = function (o) { return o.n ? Math.round((o.n - o.open) / o.n * 100) + '%' : '—'; };
+  var out = [
+    ['SEDRA HSE — Observation Register', '', ''],
+    ['Updated ' + Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm'), '', ''],
+    ['', '', ''],
+    ['Metric', 'All time', 'Today'],
+    ['Total observations', all.n, tod.n],
+    ['Open', all.open, tod.open],
+    ['Closed', all.n - all.open, tod.n - tod.open],
+    ['Close-out rate', rate(all), rate(tod)],
+    ['High risk', all.H, tod.H],
+    ['', '', ''],
+    ['Category', 'Total', 'Open']
+  ];
+  sorted_(cats).forEach(function (k) { out.push([k, cats[k].n, cats[k].open]); });
+  out.push(['', '', ''], ['Area', 'Total', 'Open']);
+  sorted_(areas).forEach(function (k) { out.push([k, areas[k].n, areas[k].open]); });
+  out.push(['', '', ''], ['Date (last 14 days)', 'Total', 'Open']);
+  Object.keys(days).sort().reverse().slice(0, 14).forEach(function (k) { out.push([k, days[k].n, days[k].open]); });
+  sum.clear();
+  sum.getRange(1, 1, out.length, 3).setValues(out);
+  sum.getRange(1, 1).setFontSize(14).setFontWeight('bold');
+  sum.getRange(2, 1).setFontColor('#666666');
+  out.forEach(function (r, i) {
+    if (r[0] === 'Metric' || r[0] === 'Category' || r[0] === 'Area' || r[0] === 'Date (last 14 days)') {
+      sum.getRange(i + 1, 1, 1, 3).setFontWeight('bold').setBackground('#1b1d20').setFontColor('#ffffff');
+    }
+  });
+  sum.setColumnWidth(1, 300);
+  sum.getRange(1, 2, out.length, 2).setHorizontalAlignment('center');
+}
+
+function bump_(m, k, open) {
+  if (!m[k]) m[k] = {n: 0, open: 0};
+  m[k].n++;
+  if (open) m[k].open++;
+}
+
+function sorted_(m) {
+  return Object.keys(m).sort(function (a, b) { return m[b].n - m[a].n; });
+}
+
+/* ---------------- helpers ---------------- */
+function out_(o) {
+  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function msg_(err) {
+  return String((err && err.message) || err);
+}</script>
 
 <script>
 /* ============================================================
@@ -1157,6 +1620,845 @@ const SYN = [
   ["بلوك","بلك","طابوق","block","blockwork"]
 ];
 
+/* صيغ بديلة لكل ملاحظة — VAR[id] = [[أوصاف بديلة تجي بعد Observed], [إجراءات بديلة]]
+   الصيغة الأصلية في templates.js تبقى رقم 0 وهذي تنضاف لها، والصفحة تختار وحدة مختلفة كل مرة */
+const VAR = {};
+Object.assign(VAR, {
+/* ---------- الفتحات والشبابيك والحواف ---------- */
+opn01: [["unprotected window openings", "window openings with no barriers installed", "open windows on the upper floor with no edge protection"],
+        ["Provide rigid barriers to every window opening.", "Close off all window openings with fixed rigid barriers."]],
+opn02: [["a worker exposed at an unprotected window opening with no fall protection", "a worker carrying out work beside an open window without any fall arrest"],
+        ["Stop the work; barricade the opening and make sure the worker is tied off to an approved anchor point before continuing.", "Stop the activity until the opening is protected and the worker is anchored with a full body harness."]],
+opn03: [["materials left on the edge of a window opening at height", "loose materials stored at an unprotected window edge on the upper floor"],
+        ["Clear all materials from the window edges and keep them away from openings.", "Move the materials away from the openings to prevent them from falling."]],
+opn04: [["a staircase with open sides and no guardrails or handrails", "stairs left without handrails or edge protection"],
+        ["Provide rigid guardrails and handrails along the full length of the staircase.", "Fix handrails and guardrails on the open sides of the stairs."]],
+opn05: [["uncovered floor/shaft openings with no barricading", "open shafts and floor openings left without covers or barriers"],
+        ["Cover every floor opening with a fixed, load-rated cover marked HOLE, or barricade it with rigid barriers.", "Secure all shaft and floor openings with fixed covers or rigid barricades."]],
+opn06: [["an unprotected roof edge", "the roof perimeter left without guardrails or toe boards"],
+        ["Provide guardrails and toe boards around the roof perimeter before roof work continues.", "Protect the full roof edge with guardrails before anyone works on the roof."]],
+opn07: [["a worker positioned at the edge of an open, unprotected opening", "a worker exposed at an unprotected edge"],
+        ["Move the worker away from the edge and provide fall protection before work resumes.", "Get the worker back from the edge and protect the opening before continuing."]],
+opn08: [["loose window and edge barriers that are not properly fixed", "edge protection that is not securely fixed in place"],
+        ["Secure all barriers firmly so they can take the weight of a person leaning on them.", "Re-fix the barriers properly and check them daily."]],
+opn09: [["improvised window protection made of loose timber and ropes", "window openings protected with unsuitable makeshift materials"],
+        ["Remove the makeshift protection and install approved rigid barriers.", "Replace the timber/rope protection with proper rigid barriers."]],
+opn10: [["slab openings in the precast floor without proper barricades", "unbarricaded openings in the precast slab"],
+        ["Provide rigid barricades around every slab opening.", "Barricade or cover all slab openings securely."]],
+opn11: [["open stair edges with no hard barricades", "unprotected stair edges"],
+        ["Provide hard barricades along every open stair edge.", "Protect the stair edges with rigid barricades."]],
+
+/* ---------- النظافة العامة والمخلفات ---------- */
+hk01: [["poor housekeeping with waste and debris scattered around the work area", "the work area left untidy and cluttered with construction waste", "housekeeping not maintained in the work area", "debris, offcuts and packaging left lying around the work area"],
+       ["Clean up the area, remove all debris and keep the walkways clear.", "Arrange a clean-up of the area and keep it tidy throughout the shift.", "Remove all waste from the area and keep access routes free of obstructions."]],
+hk02: [["debris piled up in the walkways and at the villa entrances", "walkways and villa entrances obstructed by construction debris"],
+       ["Clear the debris and keep walkways and entrances free at all times.", "Remove the debris from the access routes and entrances today."]],
+hk03: [["an overflowing waste skip that has not been collected", "a waste skip filled beyond capacity and not emptied"],
+       ["Have the skip emptied or replaced immediately.", "Arrange collection of the full skip without delay."]],
+hk04: [["accumulated combustible waste (timber, cartons and packaging)", "piles of timber offcuts, cartons and packaging left in the area"],
+       ["Clear the combustible waste and move it to the designated waste area.", "Remove the timber, cartons and packaging to the waste area today."]],
+hk05: [["timber with protruding nails left on the floor", "nailed timber offcuts scattered around the work area"],
+       ["Remove the timber pieces and pull out or bend over the nails.", "Collect the nailed timber and dispose of it safely."]],
+hk06: [["insulation foam waste scattered inside and around the villa", "leftover thermal insulation foam pieces around the villa"],
+       ["Collect all foam waste and take it to the designated waste area.", "Clear the insulation waste from inside and around the villa."]],
+hk07: [["an old tire dumped in the work area", "a discarded vehicle tire left on site"],
+       ["Remove the tire from site through the approved waste route.", "Dispose of the tire properly and keep the area clear."]],
+hk08: [["an overflowing, unfenced waste collection area", "the waste area overfilled with no fencing or signage"],
+       ["Clear the waste area and keep it fenced, signed and segregated.", "Arrange waste removal and fence off the collection area."]],
+hk09: [["mixed waste dumped on open ground outside the designated area", "unsegregated waste thrown on bare ground"],
+       ["Sort the waste and move it to the designated waste area.", "Remove the dumped waste and use the proper segregated bins."]],
+hk10: [["loose wooden pallets left around the work area", "pallets scattered across the work area"],
+       ["Stack the pallets in a designated area or take them off site.", "Collect the pallets and store them neatly away from walkways."]],
+hk11: [["waste and materials obstructing the main access road", "debris and materials left on the main road"],
+       ["Remove everything from the road and keep vehicle and emergency access open.", "Clear the main road immediately and keep it free."]],
+hk12: [["leftover food and food waste inside the building", "food waste left inside the villa under construction"],
+       ["Clear the food waste and make sure workers eat only in the rest area.", "Remove the leftovers and keep food out of the work areas."]],
+hk13: [["waste that has been left in the same spot for several days", "accumulated waste from previous days still not removed"],
+       ["Clear the accumulated waste and assign a crew for daily housekeeping.", "Remove the old waste today and set a daily clean-up for this area."]],
+hk14: [["plastic and packaging waste being blown across the site", "light waste (plastic/packaging) scattered by the wind"],
+       ["Collect the plastic waste and use covered bins.", "Pick up the windblown waste and keep the bins closed."]],
+hk15: [["uncovered, unlabelled waste bins", "waste bins with no lids or segregation labels"],
+       ["Provide lidded bins labelled for each waste type.", "Cover and label the bins for proper segregation."]],
+hk16: [["uncovered food waste attracting insects, snakes and scorpions", "food waste left exposed and attracting pests"],
+       ["Keep food waste in covered bins and remove it every day.", "Remove the food waste and provide lidded bins."]],
+
+/* ---------- الحفريات والخنادق والمناهيل ---------- */
+exc01: [["an unbarricaded excavation with no warning signs", "an excavation left open without any barriers or signage", "an open trench with no barricades or warning signs"],
+        ["Install rigid barriers around the excavation and display warning signs.", "Barricade the full perimeter of the excavation and put up warning signs."]],
+exc02: [["an unprotected excavation alongside an active site road", "an open excavation at the edge of the road with no hard barriers"],
+        ["Provide hard barriers, reflective signs and warning lights on the road side of the excavation.", "Protect the road side of the excavation with hard barriers and warning lights."]],
+exc03: [["workers in the excavation with no safe access or egress", "an excavation in use without a ladder or ramp for access"],
+        ["Install a secured ladder or ramp within 7.5 m of each worker in the excavation.", "Provide safe access (secured ladder or ramp) before workers enter the excavation."]],
+exc04: [["vertical excavation walls with no sloping, benching or shoring", "unsupported excavation sides at risk of collapse"],
+        ["Stop all work inside the excavation until the sides are sloped, benched or shored as per the method statement.", "Stop work in the excavation and make the walls safe (slope, bench or shore) before re-entry."]],
+exc05: [["excavated spoil and materials piled at the edge of the excavation", "spoil heaped right at the excavation edge"],
+        ["Move the spoil and materials at least 1 m back from the edge.", "Keep a clear 1 m zone along the excavation edge, free of spoil and materials."]],
+exc06: [["an uncovered manhole without barricades", "a manhole left open with no cover or barrier"],
+        ["Fit a secure cover on the manhole or barricade it with hard barriers and signs.", "Close the manhole with a proper cover or barricade it immediately."]],
+exc07: [["exposed underground service points with no protection", "unprotected underground utility points"],
+        ["Barricade or cover the service points and display warning signs.", "Protect the exposed services and mark them clearly."]],
+exc08: [["standing water inside the excavation", "an excavation partly filled with water"],
+        ["Pump the water out and have the excavation inspected before anyone enters.", "Dewater the excavation and check the walls for stability before re-entry."]],
+exc09: [["a trench across the villa entrance with no safe crossing", "the villa entrance cut off by a trench without a walkway"],
+        ["Install a secured walkway with handrails over the trench.", "Provide a safe crossing with handrails at the villa entrance."]],
+exc10: [["an excavation in use without a daily inspection by a competent person", "no daily inspection record for the excavation"],
+        ["Arrange a daily inspection by a competent person and record it on the tag.", "Have a competent person inspect the excavation before each shift and tag it."]],
+exc11: [["fallen and incomplete barricades around the excavation", "gaps in the excavation barricading"],
+        ["Re-install continuous barricades around the whole excavation.", "Repair the barricading so the full perimeter is closed."]],
+exc12: [["unbarricaded trenches between the villas with no crossing points", "trenches between villas left open without barriers or safe crossings"],
+        ["Barricade the trenches and provide clearly marked crossings.", "Install barriers along the trenches and safe crossing points with handrails."]],
+exc13: [["a worker in the excavation while the excavator was operating", "a worker standing inside the trench during excavator digging"],
+        ["Stop the excavator immediately; no one enters the excavation while the machine is working.", "Stop the digging and keep all workers out of the excavation while plant is operating."]],
+exc14: [["excavation work close to an existing villa foundation with no engineering assessment", "digging next to the adjacent villa foundation without an assessment"],
+        ["Stop excavating until the adjacent foundation is assessed and supported by the engineer.", "Stop the excavation and get an engineering assessment of the neighbouring foundation."]],
+
+/* ---------- معدات الحماية الشخصية ---------- */
+ppe01: [["a worker not wearing a safety helmet", "a worker on site with no hard hat", "a worker working without head protection"],
+        ["Make sure the worker wears a safety helmet at all times.", "Provide a helmet and enforce its use across the crew.", "The safety helmet must be worn at all times on site."]],
+ppe02: [["a worker not wearing safety shoes", "a worker on site in non-safety footwear"],
+        ["Make sure the worker wears safety shoes before returning to work.", "Provide safety shoes and do not allow work without them."]],
+ppe03: [["workers not wearing the full required PPE", "a crew working with incomplete PPE"],
+        ["Stop the activity until all workers wear complete PPE (helmet, safety shoes, vest, gloves and glasses).", "Stop the work and issue full PPE to the crew before resuming."]],
+ppe04: [["a worker with no PPE at all", "a worker carrying out work without any personal protective equipment"],
+        ["Take the worker out of the work area until full PPE is worn.", "Stop the worker and provide complete PPE before he continues."]],
+ppe05: [["a worker handling sharp materials with bare hands", "a worker not wearing gloves while handling rough or sharp materials"],
+        ["Issue suitable work gloves and make sure they are worn.", "Provide cut-resistant gloves for handling sharp materials."]],
+ppe06: [["a worker grinding/cutting with no safety glasses", "cutting work carried out without eye protection"],
+        ["Provide goggles or a face shield before the cutting continues.", "Stop the cutting until proper eye protection is worn."]],
+ppe07: [["a worker exposed to cement/cutting dust without a dust mask", "a worker working in heavy dust with no respiratory protection"],
+        ["Provide FFP2/N95 masks and use water to suppress the dust.", "Issue dust masks and apply wet cutting to control the dust."]],
+ppe08: [["a worker not wearing a hi-vis vest", "a worker near moving plant without a reflective vest"],
+        ["Make sure hi-vis vests are worn, particularly near plant and traffic.", "Provide a reflective vest and enforce its use on site."]],
+ppe09: [["a welder working with no face shield or protective clothing", "welding carried out without a welding mask and leather gloves"],
+        ["Stop the welding until a welding shield, leather gloves and FR coveralls are worn.", "Provide full welding PPE (shield, gloves and FR coveralls) before welding continues."]],
+ppe10: [["a worker working on live wiring with no insulated gloves", "live electrical work done without insulated gloves"],
+        ["Stop the work, isolate the supply and provide insulated gloves.", "Stop immediately; work only on isolated circuits and with insulated gloves."]],
+ppe11: [["workers wearing only a vest with no shirt underneath", "workers in unsuitable clothing on site"],
+        ["Make sure workers wear proper coveralls or work clothes at all times.", "Provide coveralls and do not allow bare upper bodies on site."]],
+ppe12: [["worn-out or damaged PPE being used", "PPE in poor condition still in use"],
+        ["Replace the damaged items and check PPE before every shift.", "Issue new PPE and remove the damaged items from use."]],
+ppe13: [["a worker exposed to high noise with no ear protection", "hearing protection not worn in a high-noise area"],
+        ["Issue ear plugs or ear muffs and display hearing-protection signs.", "Provide hearing protection and enforce it in noisy areas."]],
+ppe14: [["a helmet worn with the chin strap unfastened during work at height", "a worker at height with the helmet chin strap not secured"],
+        ["Make sure chin straps are fastened when working at height.", "Secure the chin strap on every helmet used at height."]],
+ppe15: [["a worker on site in sandals", "a worker wearing ordinary shoes instead of safety shoes"],
+        ["Keep the worker out of the work area until he wears safety shoes.", "Provide approved safety shoes; sandals are not allowed on site."]],
+ppe16: [["a full body harness worn with loose leg straps and an unfastened chest strap", "a harness not worn correctly"],
+        ["Adjust and fasten the harness properly and brief the worker on how to wear it.", "Correct the harness fitting and train the worker on its proper use."]],
+
+/* ---------- العمل على ارتفاع والسلالم والمنصات ---------- */
+wah01: [["a worker at height with no full body harness", "work at height carried out without fall protection", "a worker exposed at height without a harness"],
+        ["Stop the work until the worker wears a full body harness tied off to an approved anchor point (100% tie-off).", "Stop the activity; no work at height without a full body harness and 100% tie-off."]],
+wah02: [["a worker wearing a harness but not tied off", "a harness lanyard left unhooked while working at height"],
+        ["Make sure the lanyard is clipped to an approved anchor point or lifeline at all times.", "Enforce 100% tie-off whenever working at height."]],
+wah03: [["a defective full body harness in use", "a worn/damaged harness being used for work at height"],
+        ["Take the harness out of service and provide a certified, inspected one.", "Replace the damaged harness and inspect all harnesses before use."]],
+wah04: [["an unsecured ladder in use with no one footing it", "a ladder used without being tied off or held"],
+        ["Tie off the ladder or have a second person foot it, and keep three points of contact.", "Secure the ladder before use and keep three points of contact while climbing."]],
+wah05: [["a defective ladder being used", "a ladder with damaged rungs/stiles in use"],
+        ["Take the ladder out of service, tag it Do Not Use and replace it.", "Remove the damaged ladder and provide an inspected one."]],
+wah06: [["a worker using drums/blocks as a makeshift platform", "a worker working on top of stacked blocks/drums"],
+        ["Stop the work and provide a proper step ladder or mobile platform.", "Stop the practice; use only approved platforms or step ladders."]],
+wah07: [["a makeshift wooden platform used for work", "an improvised timber work platform that is not safe"],
+        ["Dismantle the makeshift platform and provide an approved, inspected one.", "Replace the timber platform with an approved work platform."]],
+wah08: [["an unsupported work platform built over the staircase", "a platform on the stairs that is not properly supported"],
+        ["Remove it and use a stair platform erected by a competent person.", "Dismantle the platform and replace it with one designed for stairs."]],
+wah09: [["a worker carrying materials while climbing a ladder", "a worker climbing a ladder with his hands full"],
+        ["Raise materials by rope or hoist and keep three points of contact.", "Use a rope or hoist for materials; never carry them up the ladder."]],
+wah10: [["a ladder placed through a window opening at a dangerous angle", "a ladder set at an unsafe angle through a window"],
+        ["Set the ladder on firm ground at 1:4, extending 1 m above the landing, and tie it off.", "Re-position and secure the ladder at the correct angle."]],
+wah11: [["hot work being done while standing on a ladder", "welding from a ladder"],
+        ["Stop the hot work; use a stable platform or MEWP with fire precautions.", "Stop welding from the ladder and provide a proper work platform."]],
+wah12: [["a ladder that does not reach above the roof landing", "a ladder too short for the roof access"],
+        ["Use a ladder that extends 1 m above the landing and tie it at the top.", "Provide a longer ladder and secure it at the top."]],
+wah13: [["work on the roof with no edge protection or lifeline", "roof activities carried out without fall protection"],
+        ["Stop all roof work until edge protection or a certified lifeline is in place.", "Stop the work on the roof and install edge protection first."]],
+wah14: [["a work platform overloaded with materials and with damaged boards", "damaged boards on an overloaded platform"],
+        ["Remove the excess load and replace the damaged boards before use.", "Unload the platform and repair the boards."]],
+wah15: [["ladders hauled up to the roof unsafely", "unsafe lifting of ladders to the roof"],
+        ["Raise ladders with a rope or hoist and barricade the area below.", "Use a controlled method to lift ladders and keep the area below clear."]],
+wah16: [["workers standing on a concrete barrier to work at height", "a concrete barrier used as a work platform"],
+        ["Stop it and provide a proper work platform.", "Stop the practice; use an approved platform or MEWP."]],
+wah17: [["a worker on the top step of a step ladder", "a worker standing on the top rung of an A-frame ladder"],
+        ["Provide a taller ladder or platform; the top two steps must not be used.", "Use a suitable platform instead of standing on the top step."]],
+wah18: [["a folded step ladder leaned against the wall", "an A-frame ladder used closed as a lean-to ladder"],
+        ["Open and lock the ladder fully, or use a proper extension ladder.", "Use the step ladder only when fully open; otherwise provide an extension ladder."]],
+wah19: [["a homemade timber ladder in use", "a site-made wooden ladder being used"],
+        ["Take the wooden ladder off site and use an approved, inspected ladder.", "Replace it with a certified ladder."]],
+wah20: [["parapet work carried out without fall protection", "a worker working on the roof parapet with no fall arrest"],
+        ["Stop the parapet work until a lifeline with 100% tie-off is provided.", "Stop the work and install a lifeline before work on the parapet continues."]],
+
+/* ---------- المولدات ---------- */
+gen01: [["a generator with no drip tray underneath", "a portable generator placed directly on the ground without a drip tray", "a generator running without spill containment"],
+        ["Provide a suitable drip tray under the generator.", "Put the generator on a drip tray to contain any leaks."]],
+gen02: [["no fire extinguisher at the generator", "a generator with no fire extinguisher in place"],
+        ["Place a charged and inspected fire extinguisher beside the generator.", "Provide a fire extinguisher at the generator location."]],
+gen03: [["a generator with no lockout/tagout in place", "LOTO not applied on the generator"],
+        ["Apply lockout/tagout and display the electrician's contact on the generator.", "Put LOTO in place and post the responsible electrician's number."]],
+gen04: [["a generator running indoors", "a generator in operation inside the villa"],
+        ["Stop the generator and move it outside to a ventilated area.", "Shut it down and relocate it to a designated outdoor location."]],
+gen05: [["a running generator with its doors open", "generator doors left open during operation"],
+        ["Close and lock the generator doors; only authorised electricians may open them.", "Keep the doors shut and locked at all times."]],
+gen06: [["a generator leaking diesel/oil onto the ground", "oil leakage from the generator"],
+        ["Repair the leak, clean up with a spill kit and dispose of the waste correctly.", "Fix the leak and clean the contaminated area with a spill kit."]],
+gen07: [["a drip tray filled with oil under the generator", "a damaged/overflowing generator drip tray"],
+        ["Empty and clean the drip tray (or replace it) and dispose of the oil as hazardous waste.", "Replace the drip tray and remove the oil as hazardous waste."]],
+gen08: [["a generator with an expired/missing monthly inspection tag", "no valid inspection tag on the generator"],
+        ["Get the generator inspected and tagged by a competent electrician before use.", "Arrange the monthly inspection and tag the generator."]],
+gen09: [["an unbarricaded generator", "a generator with no barriers or warning signs around it"],
+        ["Install barriers around the generator and display warning signs.", "Fence off the generator area with signage."]],
+gen10: [["combustible materials/fuel stored right next to the generator", "a generator located beside flammable materials"],
+        ["Clear all combustibles and keep 3 m free around the generator.", "Move the fuel and combustibles away from the generator."]],
+gen11: [["exposed live parts and loose cables around the generator", "a generator with uncovered electrical parts and messy cabling"],
+        ["Isolate the unit, cover the live parts and arrange the cables safely.", "Make the generator safe: cover all exposed parts and route the cables properly."]],
+gen12: [["a generator sitting at the excavation edge", "a generator positioned too close to an open excavation"],
+        ["Move the generator onto firm ground at least 2 m from the edge.", "Relocate the generator away from the excavation."]],
+gen13: [["a generator that is not earthed", "no earthing connection on the generator"],
+        ["Install an earth rod and test the earthing.", "Earth the generator properly and record the test."]],
+gen14: [["a generator obstructing the villa entrance", "a generator blocking the access route"],
+        ["Move the generator to a designated area clear of access routes.", "Relocate it so the entrance and walkway are clear."]]
+});
+
+Object.assign(VAR, {
+/* ---------- الكهرباء واللوحات والكيابل ---------- */
+ele01: [["an open electrical DB with live parts exposed", "a distribution board left unlocked and open"],
+        ["Close and lock the DB and post the electrician's contact details.", "Keep the DB closed and locked at all times."]],
+ele02: [["no fire extinguisher at the electrical DB", "a DB with no CO2 extinguisher nearby"],
+        ["Place a CO2 extinguisher beside the DB.", "Provide a suitable CO2 fire extinguisher at the DB."]],
+ele03: [["a DB with no lockout/tagout in place", "LOTO missing on the distribution board"],
+        ["Apply lockout/tagout and allow access to authorised electricians only.", "Lock and tag the DB and restrict access."]],
+ele04: [["a distribution board sitting directly on the ground", "an unprotected DB placed on the floor"],
+        ["Raise the DB on a stand and protect it from water and impact.", "Mount the DB above ground level on a proper stand."]],
+ele05: [["exposed conductors on damaged power cables", "cables with damaged insulation and bare wires", "damaged power cables in use"],
+        ["Isolate the supply and replace the damaged cables immediately.", "Disconnect the damaged cables and replace them with sound ones."]],
+ele06: [["live cables lying in standing water", "energised cables running through wet areas"],
+        ["Isolate the supply, lift the cables out of the water and route them on hangers.", "Switch off the power and re-route the cables away from water."]],
+ele07: [["bare wires inserted directly into the socket", "a cable connected without a plug"],
+        ["Disconnect it and fit an approved industrial plug.", "Remove the direct connection and use a proper plug and socket."]],
+ele08: [["cables running across the walkway", "power cables laid across the access road"],
+        ["Route the cables overhead on hangers or bury them in conduit.", "Protect the cables with conduit or lift them on hangers."]],
+ele09: [["cables scattered across the floor", "untidy cables lying on the ground"],
+        ["Put the cables on hangers or stands and keep walkways clear.", "Organise the cables off the ground."]],
+ele10: [["power tools connected without ELCB/RCD protection", "no earth leakage protection on the tools' power supply"],
+        ["Supply all tools through a tested 30 mA RCD/ELCB.", "Fit RCD protection on the supply before using the tools."]],
+ele11: [["damaged domestic plugs and adapters in use", "unapproved adapters connected to power tools"],
+        ["Take them out of use and fit approved industrial plugs.", "Replace the plugs/adapters with approved industrial types."]],
+ele12: [["plugged-in power tools left on the floor", "tools left connected and unattended on the ground"],
+        ["Unplug tools when not in use and store them safely.", "Disconnect the tools and put them away after use."]],
+ele13: [["a DB with no door or cover", "a distribution board missing its cover"],
+        ["Install the cover/door and keep the DB locked.", "Fit a lockable door on the DB."]],
+ele14: [["makeshift electrical connections", "improvised wiring connections on site"],
+        ["Remove the connections and have a qualified electrician do the installation.", "Disconnect them and get a qualified electrician to rewire them properly."]],
+ele15: [["a temporary power cable left exposed on the ground", "an unburied temporary cable"],
+        ["Bury the cable with warning tape or route it overhead.", "Protect the cable by burying it or using hangers."]],
+ele16: [["a DB at the excavation edge with no barricades", "an unbarricaded DB close to an open excavation"],
+        ["Barricade the area and move the DB away from the edge.", "Relocate the DB to a safe distance and barricade it."]],
+ele17: [["pooled water next to live cables", "standing water around energised cables"],
+        ["Isolate the supply, drain the water and move the cables away.", "Switch off, remove the water and re-route the cables."]],
+ele18: [["extension leads plugged into each other and overloading the socket", "an overloaded socket with chained extension leads"],
+        ["Remove the chained leads and use a properly rated distribution box.", "Stop daisy-chaining and provide a suitable distribution box."]],
+ele19: [["a cable reel used while still partly wound", "a partially unwound cable reel under load"],
+        ["Unwind the reel completely before use.", "Fully unroll the cable to prevent overheating."]],
+ele20: [["an unearthed welding machine with damaged cables", "damaged welding leads on a welding machine with no earthing"],
+        ["Earth the welding machine and replace the damaged leads.", "Repair the earthing and cables before welding continues."]],
+ele21: [["AC condensate dripping onto electrical connections", "water from the AC unit leaking near live connections"],
+        ["Isolate the circuit, repair the drain and keep connections away from water.", "Fix the condensate leak and protect the electrical connections."]],
+ele22: [["unapproved kettles/heaters used in the rest area", "non-approved electrical appliances in the welfare area"],
+        ["Remove the appliances or have them tested by a qualified electrician.", "Take out the unapproved appliances."]],
+
+/* ---------- تخزين المواد وترتيبها ---------- */
+mat01: [["materials scattered across the access route", "materials lying on the walkway and blocking access"],
+        ["Clear the pathway and store the materials in the designated area.", "Move the materials off the access route."]],
+mat02: [["an unstable stack of materials", "materials stacked too high and at risk of collapsing"],
+        ["Restack the materials on level ground at a safe height and secure them.", "Reduce the stack height and stabilise the materials."]],
+mat03: [["an unbarricaded material storage area", "a laydown area with no barriers or signs"],
+        ["Fence off the storage area and display signs.", "Install barriers and signage around the storage area."]],
+mat04: [["precast units stored at the roadside without barriers", "unbarricaded precast elements along the access road"],
+        ["Relocate them to the storage yard or barricade them with reflective signs.", "Move the precast units off the road or protect them with barriers."]],
+mat05: [["precast panels stacked without proper support", "hollow-core units stored unsafely with no dunnage"],
+        ["Store the panels on A-frames/racks with dunnage as per the method statement.", "Restack the precast units on proper supports."]],
+mat06: [["insulation boards stockpiled inside the villa", "combustible insulation boards stored indoors"],
+        ["Move the boards to a ventilated, designated store.", "Relocate the insulation boards outside to the storage area."]],
+mat07: [["a water tank resting on loose blocks", "a water tank on an unstable block base"],
+        ["Set the tank on a level, engineered base.", "Provide a stable base for the water tank."]],
+mat08: [["unsecured loose materials on the roof", "light materials left on the roof that can be blown off"],
+        ["Tie down or remove all loose materials on the roof.", "Clear the roof of loose items or secure them."]],
+mat09: [["pipes stacked with no chocks to prevent rolling", "unchocked pipes at risk of rolling"],
+        ["Place the pipes on racks and chock them.", "Secure the pipes with chocks."]],
+mat10: [["a disorganised material store with no aisles", "a store with materials blocking access"],
+        ["Reorganise the store with clear aisles, labelled zones and fire extinguishers.", "Arrange the store properly and keep the aisles open."]],
+mat11: [["materials placed right at the excavation edge", "materials stockpiled next to an open excavation"],
+        ["Keep materials at least 1 m back from the edge.", "Relocate the materials away from the excavation."]],
+
+/* ---------- المركبات والمرور والمواقف ---------- */
+veh01: [["a vehicle parked outside the designated parking area", "a car parked in a non-parking area"],
+        ["Park the vehicle in the designated parking area.", "Relocate the vehicle to the parking area."]],
+veh02: [["a private vehicle parked within the work area", "a car inside the active work zone"],
+        ["Move the vehicle out; only authorised plant is allowed in the work area.", "Remove the vehicle from the work zone."]],
+veh03: [["a vehicle speeding on the site road", "a driver exceeding the site speed limit"],
+        ["Stop and warn the driver, and brief all drivers on the speed limit.", "Issue a warning to the driver and enforce the speed limit."]],
+veh04: [["a site road closed without notice or a diversion", "a blocked road with no alternative route"],
+        ["Reopen the road or set up a signed diversion with traffic control.", "Provide a proper diversion before closing any road."]],
+veh05: [["a parked trailer on the site road with no barriers or signs", "a trailer left on the road unprotected"],
+        ["Park the trailer in a designated area or protect it with barriers and reflective signs.", "Relocate the trailer off the road."]],
+veh06: [["an unsecured load on a moving vehicle", "materials carried on a truck without straps"],
+        ["Strap down all loads before the vehicle moves.", "Secure the load properly before transport."]],
+veh07: [["no speed limit or direction signs on the site road", "traffic signs missing along the site road"],
+        ["Put up the traffic signs as per the traffic management plan.", "Provide the missing speed and direction signs."]],
+veh08: [["a parked vehicle obstructing the access road", "a car blocking the road"],
+        ["Move the vehicle and keep the road clear.", "Relocate the vehicle so the access stays open."]],
+veh09: [["maintenance work on vehicles outside the designated area", "equipment being serviced in an undesignated location"],
+        ["Move all maintenance to the designated area with drip trays and a spill kit.", "Use the designated maintenance area with spill protection."]],
+veh10: [["precast elements unloaded on the road without barriers", "precast units offloaded onto the site road"],
+        ["Move them to the storage area or barricade them with reflective signs.", "Clear the precast elements from the road."]],
+
+/* ---------- عمليات الرفع والرافعات ---------- */
+lft01: [["lifting in progress with no barricaded exclusion zone", "a crane lift without barricades or signs"],
+        ["Barricade the lifting zone and keep unauthorised persons out.", "Set up an exclusion zone with barriers and signs."]],
+lft02: [["a worker positioned beneath a suspended load", "a worker in the drop zone of a suspended load"],
+        ["Stop the lift and clear everyone from under the load.", "Stop lifting immediately; no one may stand under a suspended load."]],
+lft03: [["a suspended load being lifted with no tag line", "no tag line on the load"],
+        ["Attach tag lines to control the load; guiding loads by hand is prohibited.", "Control the load with tag lines."]],
+lft04: [["workers holding the suspended load by hand", "a load being guided by hand"],
+        ["Stop it; use tag lines to control suspended loads.", "Stop hand-guiding and use tag lines."]],
+lft05: [["uncertified slings/shackles in use", "lifting accessories without valid third-party certificates"],
+        ["Withdraw the uncertified gear and use certified, color-coded gear only.", "Replace the gear with certified, color-coded lifting accessories."]],
+lft06: [["lifting gear with an expired color code", "slings/shackles not color-coded for the current period"],
+        ["Inspect the gear and apply the current color code before use.", "Re-inspect and re-code the lifting gear."]],
+lft07: [["a damaged sling being used for lifting", "a frayed/defective sling in use"],
+        ["Take the sling out of service and use a certified, inspected one.", "Replace the damaged sling before lifting."]],
+lft08: [["crane outriggers placed near the excavation edge without pads", "a crane set up without outrigger pads close to an excavation"],
+        ["Stop the lift and re-set the crane on firm ground with full pads.", "Stop lifting and reposition the crane away from the edge on proper pads."]],
+lft09: [["lifting carried out without a certified rigger/signalman", "no qualified rigger or signalman for the lift"],
+        ["Stop the lift until a certified rigger and signalman are in place.", "Stop the operation and assign a qualified rigger/signalman."]],
+lft10: [["lifting without an approved lift plan or PTW", "a crane lift with no permit or lift plan on site"],
+        ["Stop the lift until the approved lift plan and PTW are on site.", "Stop lifting and get the lift plan and permit approved first."]],
+lft11: [["loose materials being lifted without a basket", "loose items hoisted with no lifting basket"],
+        ["Lift loose materials only in a certified lifting basket.", "Provide an approved lifting basket for loose items."]],
+lft12: [["an improperly slung load", "a load lifted without being secured"],
+        ["Re-rig and secure the load before lifting.", "Secure the load properly before it is lifted."]],
+lft13: [["a crane and a manlift working in close proximity", "a manlift operating within the crane's working radius"],
+        ["Separate the two operations and assign a banksman to coordinate them.", "Keep a safe distance between the machines with a banksman coordinating."]],
+lft14: [["the crane cabin windows covered and blocking the operator's view", "obstructed visibility from the crane cabin"],
+        ["Remove the coverings and fit proper sun shades and a working AC.", "Clear the cabin windows to restore full visibility."]],
+lft15: [["a load swung over workers", "lifting over an occupied area"],
+        ["Stop the lift and route it away from people.", "Stop and clear the area before lifting continues."]],
+lft16: [["no load chart in the crane cabin", "the crane's load chart missing"],
+        ["Place the load chart in the cabin and check every lift against it.", "Provide the load chart before any further lifts."]],
+lft17: [["lifting in high wind with no wind-speed check", "crane operations continuing in strong winds"],
+        ["Stop lifting above the crane's wind limit and monitor the wind speed.", "Stop the lift and check the wind speed with an anemometer."]],
+
+/* ---------- المسبق الصب ---------- */
+pre01: [["workers standing in the drop zone during precast erection", "workers beneath a precast element being erected"],
+        ["Stop the erection and keep everyone out of the drop zone until the element is secured.", "Stop the lift and clear the drop zone."]],
+pre02: [["an unpropped precast wall panel", "a precast panel standing without temporary braces"],
+        ["Install the temporary braces as per the erection method statement before releasing the hook.", "Prop the panel before the crane hook is released."]],
+pre03: [["workers on hollow cores at height with no fall protection", "workers on precast elements at height without a lifeline"],
+        ["Stop the work; provide a lifeline with 100% tie-off for everyone on the elements.", "Stop and install anchor points/lifelines before work continues on the elements."]],
+pre04: [["hollow cores stacked higher than the approved limit", "an overstacked pile of hollow-core slabs"],
+        ["Reduce the stack to the approved layers with aligned bearers.", "Restack the hollow cores within the permitted height."]],
+pre05: [["an unbarricaded precast yard with no marked routes", "the precast storage area without signage or traffic routes"],
+        ["Fence the yard, mark the vehicle/pedestrian routes and post signs.", "Barricade the yard and organise the traffic routes."]],
+pre06: [["non-approved lifting gear used on the precast elements", "uncertified anchors/shackles on the precast units"],
+        ["Use only the certified inserts and gear specified by the supplier.", "Replace the gear with the supplier's approved lifting system."]],
+pre07: [["damaged precast pieces left unbarricaded", "broken precast units left lying in the open"],
+        ["Remove the broken units or barricade them until disposal.", "Clear the broken elements from the area."]],
+pre08: [["the grouting crew working without gloves or goggles", "grouting without proper hand and eye protection"],
+        ["Issue chemical-resistant gloves and goggles to the crew.", "Make sure the grouting crew wears gloves and goggles."]],
+pre09: [["two or more hollow cores lifted together", "several precast slabs lifted at once"],
+        ["Lift a single element at a time as per the MSRA.", "Stop multiple lifts; lift one slab at a time."]],
+pre10: [["workers taking rest under stored precast units", "workers sitting between stacked precast elements"],
+        ["Move the workers out and provide a rest shelter away from the storage area.", "Clear the workers from the stacks and provide a proper rest area."]],
+pre11: [["precast lifts with no signalman", "erection works without a competent spotter"],
+        ["Provide a certified signalman for every lift.", "Assign a competent spotter before lifting continues."]],
+pre12: [["debris and loose materials left on the hollow-core slab", "loose items lying near the slab edges"],
+        ["Clean the slab and keep materials back from the edges.", "Remove the loose materials from the slab."]],
+
+/* ---------- المان لفت والمعدات المتحركة ---------- */
+mwp01: [["a MEWP working with no barricades underneath", "an unbarricaded area below an operating manlift"],
+        ["Barricade the area under and around the manlift.", "Set up barriers below the MEWP."]],
+mwp02: [["a worker in the MEWP basket not tied off", "a worker in the manlift without a clipped harness"],
+        ["Stop the work until the worker's harness is clipped to the basket anchor point.", "Stop and make sure everyone in the basket is tied off."]],
+mwp03: [["a MEWP operator with an expired TUV card", "an operator with no valid third-party certification"],
+        ["Stop the operator until a valid TUV certificate is provided.", "Stop the operation and replace the operator with a certified one."]],
+mwp04: [["MEWPs parked in undesignated locations", "manlifts left outside the parking area"],
+        ["Park the manlifts in the designated area and keep entrances clear.", "Relocate the MEWPs to their parking area."]],
+mwp05: [["a MEWP manoeuvring too close to the building", "a manlift with insufficient clearance from the structure"],
+        ["Keep a safe clearance and use a spotter while manoeuvring.", "Assign a spotter and maintain clearance from the structure."]],
+mwp06: [["a worker inside the excavator's swing radius", "a worker standing close to an operating excavator"],
+        ["Stop the excavator, clear the swing area and assign a flagman.", "Stop the machine and keep workers out of the swing radius."]],
+mwp07: [["heavy plant moving with no flagman", "equipment working without a banksman/flagman"],
+        ["Provide a trained flagman for all equipment movements.", "Assign a flagman before the equipment moves."]],
+mwp08: [["equipment on site with no QR code or documents", "plant operating without verified documents"],
+        ["Stop using the equipment until its documents and QR code are verified.", "Remove the equipment until it is registered and documented."]],
+mwp09: [["a telehandler/forklift with broken mirrors or lights", "missing mirrors and faulty lights on the forklift"],
+        ["Stop the equipment and repair the mirrors and lights.", "Fix the mirrors and lights before further use."]],
+mwp10: [["no fire extinguisher on the equipment", "plant operating with no on-board extinguisher"],
+        ["Fit an inspected fire extinguisher on the equipment.", "Provide an extinguisher on board."]],
+mwp11: [["a boom truck set up at the excavation edge", "a boom truck working too close to an excavation"],
+        ["Move the truck onto firm ground away from the edge.", "Relocate the boom truck to a safe distance from the excavation."]],
+mwp12: [["no completed pre-use checklist for the equipment", "the daily equipment checklist left unsigned"],
+        ["Fill in and sign the checklist before operation.", "Complete the daily pre-use inspection before starting."]],
+mwp13: [["equipment on site with expired registration/insurance", "plant operating with expired documents"],
+        ["Take the equipment off site until its insurance and registration are renewed.", "Stop the equipment until valid documents are provided."]],
+mwp14: [["several manlifts working too close to each other", "MEWPs operating with no safe separation"],
+        ["Separate the machines and assign a spotter to coordinate them.", "Space the manlifts out and coordinate their movement."]],
+mwp15: [["a worker raised in a loader bucket", "workers lifted on forklift forks"],
+        ["Stop immediately; only an approved MEWP may be used to lift people.", "Stop the practice and provide a MEWP."]],
+mwp16: [["plant reversing with no alarm or banksman", "a reversing vehicle without a working reverse alarm"],
+        ["Fix the reverse alarm and use a banksman when reversing.", "Provide a banksman and repair the alarm."]],
+mwp17: [["an operator working without the seat belt fastened", "the seat belt not worn by the equipment operator"],
+        ["Make sure the operator wears the seat belt at all times.", "Brief the operator to keep the seat belt on."]],
+mwp18: [["plant working near overhead power lines", "equipment operating under live overhead lines"],
+        ["Stop the work; keep the safe distance with goalposts and a spotter.", "Stop and set up goalposts and a spotter before continuing."]],
+mwp19: [["a worker exiting the MEWP basket at height", "a worker stepping from the manlift onto the building"],
+        ["Stop it; workers must exit only at ground level or via an approved access.", "Stop the practice and brief the crew."]],
+mwp20: [["an overloaded MEWP basket", "too many workers/materials in the manlift basket"],
+        ["Keep the basket within its rated capacity.", "Reduce the load in the basket to its safe working limit."]],
+mwp21: [["materials hung from the excavator bucket", "an excavator being used as a crane"],
+        ["Stop it; use rated lifting equipment and certified gear only.", "Stop and use a crane or rated lifting equipment."]],
+mwp22: [["refuelling while the engine is still running", "equipment refuelled with the engine on"],
+        ["Turn off the engine before refuelling and use a drip tray and spill kit.", "Shut down the engine for refuelling."]]
+});
+
+Object.assign(VAR, {
+/* ---------- السقالات ---------- */
+scf01: [["an untagged scaffold in use", "a scaffold with no valid inspection tag"],
+        ["Stop using it until a competent person inspects and green-tags it.", "Stop work on the scaffold until it is inspected and tagged."]],
+scf02: [["a partially erected scaffold in use", "an unfinished scaffold being used"],
+        ["Red-tag it and complete the scaffold before use.", "Stop using it until the scaffold is fully erected and inspected."]],
+scf03: [["a scaffold platform with no guardrails or toe boards", "missing guardrails/toe boards on the scaffold"],
+        ["Fit top rails, mid rails and toe boards on every platform.", "Complete the edge protection on the scaffold."]],
+scf04: [["a scaffold platform with missing planks", "a single-plank scaffold platform"],
+        ["Board the platform fully (minimum 600 mm) and secure the planks.", "Complete the platform boarding before use."]],
+scf05: [["a mobile tower with its wheels unlocked", "unlocked castors on a mobile scaffold"],
+        ["Lock the wheels before use; never move the tower with people on it.", "Engage all castor brakes before working."]],
+scf06: [["a scaffold on uneven ground with no base plates", "a scaffold without sole boards on soft ground"],
+        ["Dismantle and re-erect it on firm, level ground using base plates and sole boards.", "Provide base plates and sole boards on level ground."]],
+scf07: [["no access ladder on the scaffold", "a scaffold accessed by climbing the frame"],
+        ["Install a secured ladder extending 1 m above the platform.", "Provide proper ladder access to the scaffold."]],
+scf08: [["bent/corroded scaffold parts in use", "damaged scaffold tubes and fittings"],
+        ["Replace the damaged parts and have the scaffold re-inspected.", "Remove the defective components before use."]],
+scf09: [["scaffolders working at height without being tied off", "scaffold erection without fall protection"],
+        ["Make sure scaffolders are 100% tied off during erection and dismantling.", "Stop the erection until the scaffolders are tied off."]],
+scf10: [["a ledger blocking the scaffold access point", "an obstructed scaffold access opening"],
+        ["Relocate the member to give clear access while keeping the guardrail in place.", "Provide a clear, safe access point."]],
+scf11: [["an overloaded scaffold platform", "materials piled on the scaffold above its safe load"],
+        ["Remove the excess load and keep within the scaffold's capacity.", "Reduce the materials on the scaffold to the rated load."]],
+scf12: [["workers on a red-tagged scaffold", "a scaffold marked with a red tag still in use"],
+        ["Stop all access to the scaffold until it is completed and green-tagged.", "Stop the work and remove everyone from the scaffold."]],
+scf13: [["no barricades around the scaffold base", "an unprotected area around the scaffold"],
+        ["Barricade the scaffold base and display warning signs.", "Fence off the area around the scaffold."]],
+scf14: [["an untied scaffold", "a scaffold with no ties to the building"],
+        ["Tie the scaffold to the structure as per its design and re-tag it.", "Install the ties before the scaffold is used again."]],
+scf15: [["a mobile tower moved while a worker was on it", "a worker riding on a mobile scaffold"],
+        ["Stop immediately; the tower may only be moved with no one on it.", "Stop the practice and brief the crew."]],
+
+/* ---------- الخرسانة والشدات والدعامات ---------- */
+con01: [["leaning/unsecured props under the formwork", "formwork props out of plumb"],
+        ["Stop the pour until the props are aligned, secured and inspected.", "Stop and have a competent person fix and inspect the props."]],
+con02: [["early removal of formwork/shoring", "props being struck before the approved time"],
+        ["Stop the striking and follow the approved timing and sequence.", "Stop removing the shoring until the approved time."]],
+con03: [["concreting with no barricades or signs", "an unbarricaded pour area"],
+        ["Barricade the pour area and keep others out.", "Set up barriers and signs around the pour."]],
+con04: [["a concrete pump with outriggers not fully extended", "a concrete pump set up without outrigger pads"],
+        ["Stop the pump and fully extend the outriggers on pads.", "Stop pumping and set up the outriggers properly."]],
+con05: [["unsecured joints on the concrete pump line", "a pump line without clamps at the bends"],
+        ["Fit clamps and whip checks on the line before pumping.", "Secure all joints before pumping starts."]],
+con06: [["workers in wet concrete without rubber boots or gloves", "the pour crew without proper boots and gloves"],
+        ["Issue rubber boots and gloves to the crew.", "Provide suitable boots and gloves against cement burns."]],
+con07: [["a mixer with exposed moving parts", "an unguarded mortar mixer"],
+        ["Install the guard and isolate the mixer before cleaning.", "Guard the moving parts before using the mixer."]],
+con08: [["unprotected slab edges during the pour", "no edge protection on the slab during concreting"],
+        ["Provide edge protection before work continues.", "Fix guardrails along the slab edges."]],
+con09: [["a vibrator with a damaged cable", "a damaged lead on the concrete vibrator"],
+        ["Take it out of use and replace the cable.", "Replace the damaged cable before use."]],
+con10: [["the rebar crew cutting without eye protection", "rebar cutting without face shields"],
+        ["Issue face shields and glasses to the rebar crew.", "Make sure eye and face protection is worn."]],
+
+/* ---------- الحريق والأعمال الساخنة ---------- */
+fir01: [["welding/cutting with no fire extinguisher nearby", "hot work with no firefighting equipment at hand"],
+        ["Stop the hot work until an extinguisher and fire blanket are in place.", "Stop and provide a fire extinguisher before continuing."]],
+fir02: [["welding without a hot work permit", "hot work with no valid permit"],
+        ["Stop the work until the hot work permit is issued with its controls.", "Stop hot work and obtain the permit first."]],
+fir03: [["no fire watcher during hot work", "hot work carried out without a fire watch"],
+        ["Provide a trained fire watcher during and 30 minutes after hot work.", "Assign a fire watcher before hot work continues."]],
+fir04: [["a gas cutting set without flashback arrestors", "an LPG cylinder used with no flashback arrestor"],
+        ["Stop the work and fit flashback arrestors on the regulator and torch.", "Stop and install flashback arrestors before use."]],
+fir05: [["a discharged fire extinguisher", "an extinguisher past its service date"],
+        ["Replace it with a charged extinguisher and update the monthly tag.", "Provide a serviced extinguisher."]],
+fir06: [["the work area without any fire extinguisher", "no firefighting equipment at the work area"],
+        ["Place suitable fire extinguishers in the area.", "Provide extinguishers at the work location."]],
+fir07: [["smoking outside the designated area", "a worker smoking inside the work area"],
+        ["Stop the worker and take action; smoking only in the designated area.", "Stop it and enforce the smoking area rule."]],
+fir08: [["smoking next to gas cylinders/flammables", "a worker smoking close to flammable materials"],
+        ["Stop it immediately and take disciplinary action.", "Stop the worker and issue a disciplinary warning."]],
+fir09: [["hot work close to combustible materials", "welding beside flammable materials"],
+        ["Clear combustibles within 11 m or cover them with fire blankets.", "Remove or protect the combustibles before hot work."]],
+fir10: [["extinguishers left on the ground under the sun", "fire extinguishers exposed to direct sunlight"],
+        ["Put the extinguishers on stands in shaded, visible spots.", "Mount the extinguishers in a shaded location."]],
+fir11: [["no smoke detectors in the site office/store", "the site office without smoke detection"],
+        ["Fit smoke detectors and keep the office clear of stored materials.", "Provide smoke detectors in the office and store."]],
+fir12: [["a blocked emergency exit route", "the escape route obstructed by materials"],
+        ["Clear the route and keep it free at all times.", "Remove the obstruction from the escape route."]],
+fir13: [["the smoking area without an extinguisher or sand bucket", "no extinguisher at the smoking shelter"],
+        ["Place an extinguisher and a sand bucket at the smoking area.", "Equip the smoking shelter with an extinguisher and sand bucket."]],
+fir14: [["torch-on insulation work on the roof with no fire precautions", "roof torching without fire protection"],
+        ["Stop the work until the permit, extinguisher, fire watcher and PPE are in place.", "Stop the torching and put the fire controls in place."]],
+fir15: [["gas cylinders laid flat on the ground", "cylinders stored horizontally"],
+        ["Keep the cylinders upright and chained.", "Secure the cylinders upright in a stand."]],
+fir16: [["gas hoses joined with wire", "damaged hoses on the gas set"],
+        ["Replace the hoses with proper crimped fittings.", "Remove the damaged hoses from use."]],
+fir17: [["welding with no screens for nearby workers", "unscreened welding"],
+        ["Put up welding screens around the area.", "Provide welding curtains to protect others."]],
+fir18: [["an extinguisher with no monthly tag", "an untagged fire extinguisher"],
+        ["Inspect it and update the tag.", "Carry out the monthly check and tag the extinguisher."]],
+fir19: [["a water/foam extinguisher at the DB instead of CO2", "the wrong extinguisher type at the electrical panel"],
+        ["Replace it with a CO2 extinguisher at the panel.", "Provide a CO2 extinguisher for the electrical panel."]],
+
+/* ---------- المواد الكيميائية والوقود ---------- */
+chm01: [["chemical and paint containers exposed to direct sun", "paints/chemicals stored in the sun"],
+        ["Store them in a shaded, ventilated COSHH store.", "Move the containers out of the sun to the COSHH store."]],
+chm02: [["chemicals kept outside the COSHH store", "unsafe chemical storage outside the designated area"],
+        ["Move the chemicals back to the COSHH store with secondary containment.", "Store all chemicals in the COSHH store."]],
+chm03: [["fuel cans kept inside the villa", "diesel/petrol jerry cans stored indoors"],
+        ["Move the fuel to the outside fuel storage area.", "Remove the jerry cans from the building."]],
+chm04: [["SDS not available at the chemical store", "missing Safety Data Sheets for stored chemicals"],
+        ["Provide the SDS for every chemical at the store.", "Display the SDS at the storage area."]],
+chm05: [["no spill kit at the fuel/chemical store", "the chemical storage without a spill kit"],
+        ["Place a complete spill kit at the store.", "Provide a spill kit at the fuel storage."]],
+chm06: [["gas cylinders stored with flammable materials", "cylinders kept beside combustibles"],
+        ["Keep the cylinders upright and chained in a ventilated cage away from combustibles.", "Separate the cylinders from combustible materials."]],
+chm07: [["unsecured gas cylinders", "cylinders standing without chains"],
+        ["Chain all cylinders upright in a cage.", "Secure the cylinders so they cannot fall."]],
+chm08: [["open chemical containers in the walkway", "uncapped chemical containers left on the access route"],
+        ["Cap the containers and return them to the COSHH store.", "Remove the containers from the walkway."]],
+chm09: [["fuel decanted without a drip tray or PPE", "refuelling with no spill protection"],
+        ["Refuel using approved containers, a drip tray, a spill kit and PPE.", "Provide a drip tray and spill kit for refuelling."]],
+chm10: [["unlabelled chemical containers", "containers with no product or hazard labels"],
+        ["Label every container with its name and hazard symbols.", "Identify and label all chemical containers."]],
+chm11: [["chemicals handled without gloves or goggles", "workers using chemicals with no PPE"],
+        ["Issue the PPE required by the SDS (gloves, goggles and masks).", "Provide chemical-resistant PPE to the workers."]],
+chm12: [["batteries left in direct sun", "batteries stored unprotected under the sun"],
+        ["Store the batteries in a shaded, ventilated area.", "Move the batteries out of the sun."]],
+chm13: [["chemicals mixed with general materials in storage", "COSHH items stored alongside general materials"],
+        ["Separate the chemicals in the COSHH store by compatibility.", "Segregate the chemicals from other materials."]],
+chm14: [["fuel/chemicals kept in water bottles", "chemicals stored in drinking bottles"],
+        ["Remove them now and use only labelled, approved containers.", "Dispose of the bottles and provide proper containers."]],
+chm15: [["fuel drums with no secondary containment", "oil drums stored directly on the ground"],
+        ["Put the drums on a spill pallet or in a bund.", "Provide secondary containment for the drums."]],
+
+/* ---------- البيئة والانسكابات والغبار ---------- */
+env01: [["oil/diesel spilled on the ground", "contaminated soil from a fuel spill"],
+        ["Clean the spill with a spill kit and remove the contaminated soil as hazardous waste.", "Contain the spill and dispose of the soil properly."]],
+env02: [["concrete truck washout dumped on the ground", "mixer washout outside the washout pit"],
+        ["Wash out only in the lined washout area.", "Use the designated washout pit."]],
+env03: [["leftover concrete dumped on site", "concrete waste piles left in the area"],
+        ["Clear the concrete waste to the designated area.", "Remove the concrete waste."]],
+env04: [["heavy dust with no water spraying", "dust generated with no suppression"],
+        ["Spray water on roads and work areas regularly.", "Provide a water bowser to control the dust."]],
+env05: [["an uncovered sand/soil stockpile", "a stockpile exposed to the wind"],
+        ["Cover the stockpile or keep it wet.", "Protect the stockpile against dust."]],
+env06: [["sewage overflowing near the toilets", "a leaking septic tank"],
+        ["Fix the leak, empty the tank and disinfect the area.", "Repair the sewage leak and clean the area."]],
+env07: [["a bitumen/paint spill on the ground", "spilled paint/bitumen left uncleaned"],
+        ["Clean the spill and dispose of it as hazardous waste.", "Remove the spilled material properly."]],
+env08: [["empty cement bags buried in the soil", "packaging waste mixed with soil"],
+        ["Collect the bags and dispose of them in the waste bins.", "Remove the packaging from the soil."]],
+env09: [["pools of water around the villas", "water ponding around the villas"],
+        ["Drain the water and repair the source.", "Remove the standing water and stop the leak."]],
+env10: [["equipment washing outside the washing bay", "plant being washed on open ground"],
+        ["Wash equipment only in the washing bay.", "Use the designated wash area."]],
+env11: [["open burning of waste on site", "waste set on fire on site"],
+        ["Stop the burning now; open burning is not allowed.", "Extinguish the fire and remove the waste properly."]],
+env12: [["a leaking water pipe/tank wetting the area", "water leakage from a tank"],
+        ["Fix the leak and dry the area.", "Repair the tank/pipe and clean up the water."]],
+
+/* ---------- أعمال التشطيب ---------- */
+fin01: [["spray painting without a respirator", "painting in a poorly ventilated area with no respirator"],
+        ["Issue organic-vapour respirators and ventilate the area.", "Provide ventilation and proper respirators for the painters."]],
+fin02: [["dry cutting of tiles/blocks creating dust", "block cutting with no water or dust masks"],
+        ["Switch to wet cutting and provide FFP2 masks.", "Use water suppression and dust masks during cutting."]],
+fin03: [["an unattended bitumen kettle on heat", "a bitumen boiler left without supervision"],
+        ["Keep an attendant at the kettle with an extinguisher beside it.", "Assign someone to watch the kettle at all times and keep an extinguisher nearby."]],
+fin04: [["plastering from a makeshift platform", "painting while standing on an improvised platform"],
+        ["Use an approved mobile platform or step ladder.", "Replace the improvised platform with an approved one."]],
+fin05: [["paint tins and paint waste scattered around", "empty paint containers left on site"],
+        ["Collect them in a labelled hazardous waste container.", "Clear the paint waste as hazardous waste."]],
+fin06: [["paint tools washed out onto the ground", "paint wash water poured on the soil"],
+        ["Wash painting tools only at the designated point.", "Stop washing tools onto the soil."]],
+fin07: [["a wet cutter running next to exposed connections", "water from the tile cutter near electrical connections"],
+        ["Move the connections away from the water and use an RCD-protected supply.", "Protect the connections from water."]],
+fin08: [["sealant/insulation applied without a respirator", "no respiratory protection during insulation work"],
+        ["Issue respirators as required by the SDS.", "Provide suitable respiratory protection."]],
+fin09: [["uncapped adhesive containers left in the area", "open sealant tins in the work area"],
+        ["Close the containers and return them to the store.", "Cap the containers and store them properly."]],
+fin10: [["AC installation on the roof with no edge protection", "rooftop AC works without fall arrest"],
+        ["Provide edge protection or a lifeline with 100% tie-off first.", "Stop the installation until fall protection is in place."]],
+fin11: [["AC units hauled to the roof unsafely", "unsafe lifting of AC units"],
+        ["Lift the units with certified equipment and barricade below.", "Use a proper lifting method for the AC units."]],
+fin12: [["glass panels carried without suction lifters", "glazing handled with no cut-resistant gloves"],
+        ["Provide suction lifters and cut-resistant gloves, with two-person handling.", "Use proper glass handling tools and gloves."]],
+fin13: [["cladding works with no protection below", "façade work with the area below unbarricaded"],
+        ["Barricade the area below and tie off tools and materials.", "Protect the area below the façade works."]],
+fin14: [["wall chasing with no goggles or mask", "MEP chasing works creating dust without PPE"],
+        ["Issue goggles and masks and use dust extraction.", "Provide eye and respiratory protection for chasing."]],
+
+/* ---------- العدد والأدوات ---------- */
+tls01: [["a grinder with its guard removed", "an unguarded angle grinder in use"],
+        ["Stop using it until the guard is refitted.", "Refit the guard before using the grinder."]],
+tls02: [["untagged power tools in use", "tools without the current color code"],
+        ["Inspect and color-code all tools; remove untagged ones.", "Tag all tools for the current period."]],
+tls03: [["a defective tool being used", "a broken hand tool in use"],
+        ["Take the tool out of use and replace it.", "Replace the damaged tool with an inspected one."]],
+tls04: [["an unguarded table saw/cutter", "a cutting machine with its guards removed"],
+        ["Stop the machine until the guards are fitted and inspected.", "Fit the guards before using the saw."]],
+tls05: [["exposed belts/moving parts on the compressor", "an unguarded compressor"],
+        ["Install the guard before operating.", "Guard the moving parts of the compressor."]],
+tls06: [["air hoses with no whip checks", "damaged compressor hoses in use"],
+        ["Replace the hoses and fit whip checks.", "Provide whip checks on all air connections."]],
+tls07: [["tools misused for the wrong task", "improper use of tools"],
+        ["Provide and use the right tool for the job.", "Brief the worker to use the correct tool."]],
+tls08: [["a power tool with a taped cable", "a damaged tool lead"],
+        ["Take the tool out of service and replace the cable.", "Replace the damaged lead before use."]],
+tls09: [["an untrained worker using a nail gun", "a nail gun operated without eye protection"],
+        ["Stop it until the operator is trained and wears glasses, and keep others clear.", "Stop the nail gun use and provide training and safety glasses."]],
+tls10: [["tools at height not tied off", "untethered tools used at height"],
+        ["Tie off tools at height and barricade below.", "Provide tool lanyards for work at height."]]
+});
+
+Object.assign(VAR, {
+/* ---------- التصاريح والوثائق والكفاءة ---------- */
+ptw01: [["an activity running without a PTW", "work in progress with no valid permit to work"],
+        ["Stop the activity until a valid PTW is issued and displayed.", "Stop the work and obtain the PTW first."]],
+ptw02: [["work under an expired PTW", "a PTW with wrong/expired dates"],
+        ["Stop and renew the permit with the correct dates.", "Stop the work until the PTW is renewed."]],
+ptw03: [["a permit issued for another location being used", "work under a PTW for a different phase"],
+        ["Stop the work and obtain a PTW for this location.", "Stop; the permit covers only its stated location and activity."]],
+ptw04: [["a worker with no ID or gate pass", "an unidentified worker on site"],
+        ["Escort the worker off site until his ID and induction are verified.", "Remove the worker until a valid gate pass is issued."]],
+ptw05: [["workers on site without HSE induction", "uninducted workers carrying out work"],
+        ["Stop them and arrange the induction before they start.", "Stop the workers until the HSE induction is done."]],
+ptw06: [["plant without valid TPI certificates", "equipment with expired third-party inspection"],
+        ["Stop the equipment until valid TPI certificates are provided.", "Stop and arrange the third-party inspection."]],
+ptw07: [["no approved MSRA at the work location", "work without an approved method statement"],
+        ["Stop until the approved MSRA is on site and briefed to the crew.", "Stop the activity and brief the crew on the approved MSRA."]],
+ptw08: [["work started without a toolbox talk", "no TBT held before the activity"],
+        ["Hold and record a TBT before starting.", "Conduct the toolbox talk before work begins."]],
+ptw09: [["no safety officer at the active work area", "the work area without HSE supervision"],
+        ["Assign a safety officer to the area now.", "Provide HSE supervision at the work area."]],
+ptw10: [["an operator with no valid licence or ID", "an unlicensed equipment operator"],
+        ["Stop the operator until the licence and ID are verified.", "Stop and replace the operator with a licensed one."]],
+ptw11: [["no permit displayed at the work location", "the PTW not posted at the work area"],
+        ["Post the valid permit at the work location.", "Display the PTW at the work area."]],
+ptw12: [["daily inspection records not completed", "outdated inspection checklists for scaffolds/ladders/tools"],
+        ["Complete the daily inspections and record them.", "Update the daily inspection checklists."]],
+
+/* ---------- الرعاية والإجهاد الحراري ---------- */
+wel01: [["drinking water left in the sun", "water containers exposed to direct sunlight"],
+        ["Keep drinking water cool in shaded, insulated containers.", "Move the water to a shaded place."]],
+wel02: [["no drinking water for the workers", "the work area without drinking water"],
+        ["Provide cool drinking water now.", "Arrange drinking water at the work area immediately."]],
+wel03: [["no rest shelter for the workers", "workers without a shaded rest area"],
+        ["Set up a shaded, ventilated rest shelter nearby.", "Provide a shaded rest area."]],
+wel04: [["outdoor work under the sun during the midday ban hours", "workers exposed to the sun during the 12:00–15:00 work ban"],
+        ["Stop the work and observe the midday work-ban.", "Stop outdoor work during the ban hours."]],
+wel05: [["dirty toilets with no cleaning schedule", "unhygienic toilet facilities"],
+        ["Clean the toilets and keep a daily cleaning record.", "Arrange daily cleaning of the toilets."]],
+wel06: [["toilets out of order", "locked toilets unavailable to workers"],
+        ["Fix and reopen the toilets now.", "Make the toilets available to workers."]],
+wel07: [["materials stored in the rest area", "the rest shelter used as a store"],
+        ["Remove the materials and keep the area for rest only.", "Clear the rest shelter."]],
+wel08: [["a dirty water cooler with an expired filter", "an unclean drinking water station"],
+        ["Clean the station and change the filter.", "Sanitise the water station and record the filter change."]],
+wel09: [["a broken AC in the equipment cabin", "an operator working in a hot cabin without AC"],
+        ["Fix the cabin AC before further operation.", "Repair the air conditioning in the cabin."]],
+wel10: [["workers living in the site store", "overnight stays inside the storage area"],
+        ["Stop it; overnight stays in site stores are not allowed.", "Remove the bedding and stop overnight stays."]],
+wel11: [["the work area without a first aid kit", "no first aid box available"],
+        ["Place a stocked first aid kit and display the first aider's number.", "Provide a complete first aid kit."]],
+wel12: [["no hand-wash station at the toilets", "the rest area without hand-washing facilities"],
+        ["Install a hand-washing point with soap and water.", "Provide water and soap for hand washing."]],
+wel13: [["the water cooler placed among stored materials", "a drinking water point inside the storage area"],
+        ["Move it to a clean, shaded spot away from materials and traffic.", "Relocate the water station to a clean area."]],
+wel14: [["a rest shelter with broken seats and shade", "a damaged rest area"],
+        ["Fix the shelter and keep it clean.", "Repair the seating and shade."]],
+wel15: [["a worker suffering from heat stress symptoms", "a worker who appeared dizzy and exhausted from the heat"],
+        ["Stop his work, cool him down in the shade with water and call the first aider.", "Stop the worker immediately and arrange first aid in a cool place."]],
+wel16: [["no heat stress work–rest schedule in place", "continuous work in high heat without rest breaks"],
+        ["Implement the work–rest cycle with shaded breaks and cool water.", "Apply rest breaks as per the heat stress plan."]],
+
+/* ---------- السلوكيات غير الآمنة ---------- */
+act01: [["waste thrown down from an upper floor", "a worker dropping debris from height"],
+        ["Stop it; use a chute or lower waste in bags with the area below barricaded.", "Stop throwing waste and provide a debris chute."]],
+act02: [["a worker sitting under ongoing overhead work", "a worker below an opening while work is going on above"],
+        ["Keep the area under overhead work clear and barricaded.", "Move the worker and barricade the area below."]],
+act03: [["workers having meals inside the building", "eating in the work area"],
+        ["Make sure workers eat only in the rest area.", "Direct the workers to the rest area for meals."]],
+act04: [["a plant operator on his mobile phone while operating", "phone use during equipment operation"],
+        ["Stop the operator and warn him; no phones while operating.", "Stop it and issue a written warning."]],
+act05: [["a worker ignoring HSE instructions", "non-compliance with safety instructions by a worker"],
+        ["Take the worker off site and take disciplinary action.", "Issue a disciplinary action against the worker."]],
+act06: [["a worker cutting through the excavation", "a worker crossing the trench instead of using the walkway"],
+        ["Brief him and enforce the use of the marked crossing.", "Make sure workers use the designated crossings only."]],
+act07: [["workers riding in the back of a pickup", "workers travelling on the equipment"],
+        ["Stop it; passengers may only ride in designated seats.", "Stop and transport workers in proper seats."]],
+act08: [["a bypassed safety guard on the equipment", "a machine running with its guard removed"],
+        ["Refit the guard and take action against the responsible person.", "Reinstall the guard before use."]],
+act09: [["equipment operated by an unauthorised person", "a non-certified worker operating plant"],
+        ["Stop the operation; only authorised operators may use the equipment.", "Stop it and assign a trained operator."]],
+act10: [["materials lowered through a window by hand", "tools passed down from a window opening"],
+        ["Barricade below and use a proper hoist or bag line.", "Use a hoist and keep the area below clear."]],
+act11: [["a worker leaning out of an unprotected window", "a worker approaching an open window edge"],
+        ["Stop him, protect the opening and brief the crew.", "Stop the worker and barricade the opening."]],
+act12: [["a vehicle stopped in the middle of the road", "a driver blocking traffic on the site road"],
+        ["Ask the driver to move aside and keep the road clear.", "Move the vehicle and brief the driver."]],
+act13: [["workers sleeping under parked equipment", "workers resting beneath vehicles"],
+        ["Stop it immediately and provide a shaded rest area.", "Move the workers out and provide a proper rest shelter."]],
+act14: [["a worker on his phone while at height", "phone use while working at height"],
+        ["Stop it; phones are allowed only in safe areas.", "Stop and brief the worker on phone use."]],
+act15: [["heavy blocks/pipes carried manually", "manual handling of heavy loads without aids"],
+        ["Provide mechanical aids or team lifting and brief the crew.", "Use trolleys/hoists for heavy loads."]],
+act16: [["workers playing around in the work area", "horseplay among the crew"],
+        ["Stop it and brief the crew on the site rules.", "Stop the horseplay and warn the workers."]],
+act17: [["a worker crossing in front of moving plant", "a pedestrian walking in the equipment route"],
+        ["Brief him and enforce the pedestrian route.", "Keep pedestrians on the marked walkway."]],
+act18: [["workers taking photos/videos on site without permission", "unauthorised filming on site"],
+        ["Stop the recording and remind workers of the photography rules.", "Stop it and brief the crew."]],
+act19: [["long materials carried up the stairs by one worker", "a worker carrying long pipes/bars up the stairs alone"],
+        ["Use a hoist or team lift with a clear route.", "Provide assistance or a hoist for long materials."]],
+act20: [["workers throwing materials to each other", "materials tossed between workers"],
+        ["Stop it; hand over or lower materials in a controlled way.", "Stop throwing materials and pass them by hand."]],
+
+/* ---------- حالات غير آمنة عامة ---------- */
+uc01: [["uncapped protruding rebar", "exposed rebar ends without caps"],
+       ["Cap all protruding rebar with mushroom caps.", "Install rebar caps."]],
+uc02: [["no safe access route to the villa", "unsafe access to the work area"],
+       ["Provide a safe, clear access route.", "Create safe access to the villa."]],
+uc03: [["nails sticking out of the floor", "protruding nails on the floor"],
+       ["Pull out or bend the nails.", "Remove the nails from the floor."]],
+uc04: [["a slippery wet floor with no signs", "a wet floor area without warning"],
+       ["Dry the floor and put up wet floor signs.", "Clean the area and place warning signs."]],
+uc05: [["a roof flood test without barriers or signs", "water testing on the roof with no warning signs"],
+       ["Barricade the roof and display signs during the test.", "Provide barriers and signage for the water test."]],
+uc06: [["poor lighting in the work area", "a dark work area"],
+       ["Install adequate temporary lighting.", "Provide proper lighting before work continues."]],
+uc07: [["an unstable temporary structure", "a poorly supported temporary structure"],
+       ["Keep people away and have a competent person support or dismantle the structure.", "Secure the structure and keep people away."]],
+uc08: [["site containers on uneven ground", "unsupported office containers"],
+       ["Set the containers level on proper blocks/supports.", "Provide stable supports for the containers."]],
+uc09: [["an uncovered water tank", "a water tank left open"],
+       ["Fit a secure cover on the tank.", "Close the tank with a proper lid."]],
+uc10: [["the villa entrance fully blocked", "obstructions blocking the villa access"],
+       ["Clear the entrance and keep access open.", "Remove the obstructions from the entrance."]],
+uc11: [["exposed steel mesh with sharp edges", "sharp-edged mesh left in the walkway"],
+       ["Cover or remove the mesh.", "Protect the sharp edges of the mesh."]],
+uc12: [["an unmarked overhead obstruction", "low headroom with no warning"],
+       ["Mark it with hazard tape and signs.", "Highlight the low headroom clearly."]],
+uc13: [["a water cooler at an unprotected edge", "a water tank placed at the slab edge"],
+       ["Move it away from the edge to a safe, shaded place.", "Relocate the cooler away from the edge."]],
+uc14: [["pipe pressure testing with no barricades", "an unbarricaded pressure test area"],
+       ["Barricade the test area and post warning signs.", "Keep people away from the pressure test with barriers and signs."]],
+uc15: [["a fresh block wall without temporary support", "an unsupported new blockwork wall"],
+       ["Prop the wall temporarily and keep people away until it cures.", "Support the new wall and barricade it."]],
+
+/* ---------- اللوحات والطوارئ وتنظيم الموقع ---------- */
+emg01: [["missing mandatory safety signs at the entrance", "no PPE signs at the work area entrance"],
+        ["Display the mandatory signs at all entrances.", "Install the required safety signs."]],
+emg02: [["no marked assembly point", "the emergency assembly point not identified"],
+        ["Install the assembly point sign and brief everyone.", "Mark the assembly point clearly."]],
+emg03: [["no emergency numbers displayed", "emergency contacts not posted at the work area"],
+        ["Post the emergency numbers and first aider details.", "Display the emergency contact list."]],
+emg04: [["a damaged site hoarding", "the site fence left open"],
+        ["Repair the fence and keep the gates closed.", "Secure the hoarding against unauthorised entry."]],
+emg05: [["unauthorised people on site", "visitors inside the site without permission"],
+        ["Escort them out and tighten gate control.", "Remove them and control site access."]],
+emg06: [["faded/damaged safety signs", "illegible warning signs"],
+        ["Replace the signs.", "Install new, clear warning signs."]],
+emg07: [["no separate walkway for pedestrians", "pedestrians sharing the route with moving plant"],
+        ["Provide a barricaded pedestrian route.", "Separate pedestrians from vehicle movement."]],
+emg08: [["no contractor information board", "a missing information board at the work area"],
+        ["Install the board with names and numbers.", "Provide the contractor information board."]],
+emg09: [["no first aider at the work area", "the work area without a trained first aider"],
+        ["Assign a first aider and display their contact.", "Provide a trained first aider."]],
+emg10: [["no villa number displayed", "the villa number not visible"],
+        ["Display the villa number clearly.", "Put up the villa number at the entrance."]],
+emg11: [["a blocked emergency access route", "emergency access obstructed by materials/vehicles"],
+        ["Clear the route now and keep it free.", "Remove the obstruction from the emergency route."]],
+emg12: [["workers who do not know the assembly point", "the crew unaware of the emergency procedure"],
+        ["Brief the crew on the emergency plan and assembly point.", "Include the emergency procedure in the next TBT."]],
+
+/* ---------- البنية التحتية والطرق ---------- */
+inf01: [["valve pipes lying on the road unprotected", "infrastructure pipes on the road with no barriers"],
+        ["Move the pipes off the road or barricade them with reflective signs.", "Protect the pipes with barriers and signs."]],
+inf02: [["road works with no traffic management", "works on the road without signs, cones or a flagman"],
+        ["Set up the approved traffic management layout first.", "Provide signs, cones and a flagman before continuing."]],
+inf03: [["a roller working without a banksman", "a compactor operating with no spotter"],
+        ["Provide a banksman and keep workers away from the roller.", "Assign a spotter for the roller."]],
+inf04: [["an unprotected trench across the road", "a road trench without barriers or lights"],
+        ["Install hard barriers with warning lights and a safe crossing.", "Barricade and light the trench."]],
+inf05: [["a diversion with unclear signage", "an unlit traffic diversion"],
+        ["Put up diversion signs, cones and lights.", "Provide clear diversion signage and lighting."]],
+inf06: [["spoil spilled onto the road", "soil dragged onto the site road"],
+        ["Clean the road and keep spoil within the work area.", "Clear the soil from the road."]],
+inf07: [["night work in poor lighting", "inadequate lighting for night works"],
+        ["Provide lighting towers and reflective vests.", "Install proper lighting before night work continues."]],
+inf08: [["kerbs lifted by hand", "manual handling of kerb stones"],
+        ["Provide kerb lifters or mechanical aids.", "Use lifting aids for kerb installation."]],
+inf09: [["a compactor operator with no ear protection", "plate compactor use without hearing protection"],
+        ["Issue ear protection and rotate the operators.", "Provide hearing protection for the compactor operator."]],
+
+/* ---------- الأماكن المغلقة والمناهيل ---------- */
+cse01: [["manhole entry without a confined space permit", "workers inside a confined space with no permit"],
+        ["Stop the entry immediately; no one enters without the permit, gas test and rescue plan.", "Stop and get the confined space permit first."]],
+cse02: [["entry into a manhole without gas testing", "no gas test before confined space entry"],
+        ["Test the atmosphere before and during entry and record it.", "Carry out a gas test before anyone enters."]],
+cse03: [["poor ventilation in the confined space", "no forced ventilation inside the manhole"],
+        ["Provide forced ventilation throughout the work.", "Ventilate the space before and during entry."]],
+cse04: [["an unsecured rescue tripod", "the tripod set up without locking pins"],
+        ["Lock the tripod and check the winch before entry.", "Secure the tripod properly."]],
+cse05: [["no attendant at the manhole entry", "a confined space without a standby person"],
+        ["Keep a trained attendant at the entry at all times.", "Assign a standby attendant."]],
+cse06: [["an unsafe ladder into the manhole", "a poor access ladder for the confined space"],
+        ["Install a fixed, secured ladder that suits the depth of the space.", "Replace the access ladder with a proper one."]],
+
+/* ---------- الحوادث وشبه الحوادث ---------- */
+inc01: [["a near miss involving moving plant and a worker", "a worker nearly hit by moving equipment"],
+        ["Report it, investigate the cause and brief all operators and flagmen.", "Record the near miss and brief the plant crews."]],
+inc02: [["an object falling from height (near miss)", "a near miss with a falling object"],
+        ["Report it, barricade below and secure everything at height.", "Investigate the near miss and secure tools/materials at height."]],
+inc03: [["a crane set up dangerously close to an excavation (near miss)", "a near miss with crane outriggers at the excavation edge"],
+        ["Reposition the crane, report it and share the lesson with the lifting crews.", "Move the crane to firm ground and report the near miss."]],
+inc04: [["an unreported first-aid case", "a minor injury not reported to HSE"],
+        ["Report it, record the first aid and investigate.", "Submit the first-aid report and investigate the cause."]],
+inc05: [["an unreported incident on site", "an incident that was not notified to HSE"],
+        ["Submit the report within 24 hours and preserve the scene.", "Report the incident and start the investigation."]],
+inc06: [["utility damage caused by equipment", "property damaged by plant"],
+        ["Stop the equipment, report it and verify utilities before digging.", "Report the damage and check the utility drawings before resuming."]],
+inc07: [["lessons learned not applied on site", "previous incident lessons not implemented"],
+        ["Brief all crews on the lessons and verify the controls.", "Implement the lessons learned and confirm the controls."]],
+
+/* ---------- ممارسات جيدة ---------- */
+gp01: [["a clean, well-organised work area with clear walkways", "excellent housekeeping throughout the area"], []],
+gp02: [["all window openings properly protected", "rigid window protection in place on every opening"], []],
+gp03: [["well-barricaded excavations with clear signage", "excavations fully protected with barriers and signs"], []],
+gp04: [["all workers wearing complete PPE", "full PPE compliance across the crew"], []],
+gp05: [["a well-managed lift with an exclusion zone and tag lines", "a safe, well-planned lifting operation"], []],
+gp06: [["a tidy, well-organised material storage area", "materials stored neatly in the designated area"], []],
+gp07: [["a fully compliant generator set-up", "a generator with drip tray, extinguisher, LOTO and barriers in place"], []],
+gp08: [["a good toolbox talk held before work", "an effective TBT delivered to the crew"], []],
+gp09: [["workers at height fully tied off", "100% tie-off maintained during work at height"], []],
+gp10: [["prompt close-out of observations with clear photos", "fast and well-documented close-outs"], []],
+gp11: [["a well-controlled precast erection", "safe precast installation with an exclusion zone and signalman"], []],
+gp12: [["good welfare facilities for the workers", "clean toilets, cool water and shaded rest areas provided"], []],
+gp13: [["well-organised traffic control on site", "effective traffic management with flagmen"], []],
+gp14: [["effective heat-stress measures", "proper heat-stress controls in place"], []],
+gp15: [["a well-organised COSHH store", "proper chemical storage with SDS and a spill kit"], []],
+gp16: [["neat cable management on hangers", "well-arranged cables keeping walkways clear"], []],
+gp17: [["active HSE supervision at the work area", "a safety officer closely following the work"], []],
+gp18: [["a properly erected, green-tagged scaffold", "a compliant scaffold with full edge protection"], []]
+});
+
 </script>
 <script>
 const AREAS = {"2AH":[[[46.75922,24.84876],[46.75924,24.84888],[46.76122,24.84989],[46.75886,24.85368],[46.75435,24.85133],[46.75477,24.85094],[46.75528,24.85072],[46.75752,24.85041],[46.75814,24.85019],[46.75868,24.84971],[46.75922,24.84876]]],"2AD":[[[46.74188,24.84009],[46.74187,24.83995],[46.7465,24.84237],[46.74635,24.84262],[46.74642,24.8429],[46.74413,24.84663],[46.74397,24.84677],[46.74404,24.84704],[46.74427,24.84715],[46.74403,24.84731],[46.74288,24.84722],[46.74178,24.84677],[46.74158,24.84644],[46.74121,24.84616],[46.74126,24.84579],[46.74121,24.84566],[46.7409,24.84535],[46.74081,24.8448],[46.73959,24.84344],[46.74097,24.84142],[46.74153,24.84044],[46.74188,24.84009]]],"2AE":[[[46.75201,24.84515],[46.75164,24.84573],[46.75194,24.84566],[46.75218,24.84568],[46.75236,24.84576],[46.75231,24.84582],[46.75233,24.84604],[46.75226,24.8462],[46.75199,24.84629],[46.75176,24.84671],[46.75138,24.8468],[46.751,24.84707],[46.75054,24.84716],[46.75037,24.84735],[46.74992,24.84755],[46.74828,24.84791],[46.74814,24.84738],[46.74797,24.84742],[46.74874,24.85039],[46.74869,24.85059],[46.74875,24.85069],[46.75134,24.85142],[46.75332,24.85242],[46.75414,24.85113],[46.75463,24.85068],[46.7554,24.85037],[46.75755,24.85008],[46.75763,24.85038],[46.75817,24.85016],[46.75868,24.84971],[46.75919,24.84882],[46.75201,24.84515]]],"2AB":[[[46.74135,24.83974],[46.74118,24.84002],[46.74131,24.84011],[46.74134,24.84029],[46.74098,24.84098],[46.73898,24.83995],[46.73877,24.83999],[46.73817,24.83995],[46.738,24.8399],[46.73779,24.83972],[46.73764,24.83985],[46.73748,24.84014],[46.73723,24.84031],[46.73687,24.84038],[46.73659,24.84032],[46.73663,24.84018],[46.73649,24.84021],[46.7364,24.8404],[46.7361,24.84039],[46.73529,24.84078],[46.73474,24.84084],[46.73293,24.83693],[46.73302,24.83661],[46.73287,24.83631],[46.73374,24.83607],[46.73434,24.83616],[46.74135,24.83974]]],"2AF":[[[46.73868,24.84682],[46.73885,24.84708],[46.73967,24.84701],[46.73993,24.8472],[46.74033,24.84729],[46.74039,24.84713],[46.74052,24.84706],[46.74081,24.84701],[46.7429,24.84757],[46.74441,24.84761],[46.7449,24.84783],[46.74541,24.84828],[46.74582,24.8484],[46.74809,24.84794],[46.74874,24.85039],[46.74869,24.85059],[46.74874,24.85068],[46.75134,24.85142],[46.75333,24.85241],[46.75322,24.8526],[46.75126,24.85184],[46.74789,24.85082],[46.74024,24.84868],[46.74009,24.84869],[46.73906,24.84845],[46.73731,24.84796],[46.73675,24.84808],[46.73661,24.84735],[46.73668,24.8474],[46.73752,24.84726],[46.7379,24.84701],[46.73807,24.84678],[46.73837,24.84665],[46.73738,24.84499],[46.73754,24.84491],[46.73854,24.84658],[46.74004,24.84595],[46.74065,24.84481],[46.74057,24.84453],[46.7408,24.8448],[46.74087,24.84528],[46.74066,24.84548],[46.74042,24.84559],[46.74039,24.84574],[46.7403,24.8458],[46.74008,24.84625],[46.73992,24.84634],[46.73965,24.84635],[46.73944,24.84649],[46.73897,24.84662],[46.73882,24.8466],[46.7386,24.84666],[46.73868,24.84682]]],"2AC":[[[46.74098,24.84098],[46.73897,24.83994],[46.73876,24.84],[46.73809,24.83993],[46.73779,24.83972],[46.73737,24.84024],[46.73724,24.8403],[46.73689,24.84038],[46.73659,24.84031],[46.73663,24.84018],[46.73649,24.84021],[46.73649,24.84029],[46.73639,24.8404],[46.7361,24.84039],[46.7353,24.84078],[46.73472,24.84079],[46.73604,24.84504],[46.73613,24.84514],[46.7363,24.84532],[46.73648,24.84527],[46.73842,24.84426],[46.73898,24.84389],[46.73967,24.84318],[46.74108,24.84103],[46.74148,24.84028],[46.74167,24.8403],[46.74182,24.8402],[46.74188,24.84],[46.74178,24.83984],[46.74135,24.83973],[46.74118,24.84001],[46.74131,24.84011],[46.74134,24.84029],[46.74098,24.84098]]],"5G":[[[46.75481,24.88465],[46.75481,24.88508],[46.7547,24.88522],[46.75455,24.88528],[46.75232,24.88537],[46.75192,24.88524],[46.75154,24.88541],[46.7498,24.88547],[46.74829,24.88478],[46.74803,24.88448],[46.7476,24.88445],[46.74608,24.8837],[46.74596,24.88356],[46.74749,24.8825],[46.74746,24.88262],[46.74753,24.88276],[46.74733,24.88326],[46.74725,24.88382],[46.74733,24.88411],[46.74748,24.88427],[46.74771,24.88429],[46.74781,24.88437],[46.74798,24.88435],[46.7482,24.88458],[46.74884,24.88483],[46.74893,24.88498],[46.74915,24.88495],[46.74924,24.88476],[46.74932,24.88488],[46.74994,24.88478],[46.75023,24.88487],[46.75031,24.885],[46.7505,24.88508],[46.75093,24.88493],[46.75132,24.88523],[46.75152,24.8853],[46.75168,24.88521],[46.75173,24.88506],[46.75168,24.88483],[46.75143,24.88474],[46.75144,24.88451],[46.75174,24.88435],[46.75222,24.88427],[46.75239,24.88418],[46.7529,24.88432],[46.75322,24.88433],[46.75352,24.88446],[46.75395,24.88433],[46.75463,24.88463],[46.75481,24.88465]]],"3H":[[[46.73376,24.87183],[46.73773,24.87346],[46.73804,24.87343],[46.73816,24.8733],[46.7398,24.86997],[46.7398,24.86942],[46.73928,24.86819],[46.73885,24.86784],[46.73578,24.86696],[46.73559,24.86708],[46.73504,24.86863],[46.73441,24.87015],[46.7337,24.87164],[46.73376,24.87183]]],"3D":[[[46.74838,24.87169],[46.74959,24.87034],[46.74978,24.87021],[46.74999,24.8702],[46.75106,24.87102],[46.75009,24.87207],[46.75001,24.87202],[46.74946,24.87259],[46.74904,24.87257],[46.74897,24.87242],[46.74873,24.87228],[46.74787,24.8722],[46.74838,24.87169]]],"3C":[[[46.74643,24.86747],[46.74956,24.86987],[46.74959,24.87006],[46.74952,24.87021],[46.7477,24.87212],[46.74624,24.87205],[46.74585,24.87176],[46.74399,24.87072],[46.74378,24.87055],[46.74346,24.8705],[46.74351,24.87033],[46.74607,24.8676],[46.74624,24.86749],[46.74643,24.86747]]],"3B":[[[46.74264,24.86457],[46.746,24.86714],[46.74602,24.8673],[46.74596,24.86745],[46.74343,24.87026],[46.74319,24.87035],[46.74233,24.87005],[46.74035,24.86812],[46.74006,24.86794],[46.73972,24.86785],[46.73962,24.86768],[46.73968,24.86752],[46.74228,24.86469],[46.74245,24.86459],[46.74264,24.86457]]],"3E":[[[46.74469,24.87247],[46.7449,24.8726],[46.7456,24.87337],[46.74576,24.87345],[46.74676,24.87332],[46.74677,24.87341],[46.74927,24.87356],[46.74945,24.87349],[46.74974,24.8732],[46.74974,24.8731],[46.74946,24.87259],[46.74904,24.87257],[46.74897,24.87242],[46.74879,24.8723],[46.74787,24.8722],[46.74762,24.87209],[46.74625,24.87205],[46.74585,24.87176],[46.74399,24.87072],[46.74378,24.87055],[46.74346,24.8705],[46.7433,24.87055],[46.74315,24.87041],[46.74234,24.87013],[46.74029,24.86816],[46.73991,24.868],[46.73959,24.86796],[46.73947,24.868],[46.73946,24.86815],[46.73996,24.86933],[46.74024,24.86961],[46.74031,24.86988],[46.74115,24.87063],[46.74202,24.87167],[46.74469,24.87247]]],"3F":[[[46.74284,24.87523],[46.74382,24.87316],[46.74386,24.87317],[46.74398,24.87293],[46.74389,24.87289],[46.74408,24.87236],[46.74477,24.87258],[46.74556,24.87342],[46.74572,24.87351],[46.74647,24.87345],[46.74647,24.87351],[46.74677,24.8735],[46.74677,24.87341],[46.74927,24.87356],[46.74852,24.87401],[46.74807,24.87413],[46.74775,24.87442],[46.74738,24.87487],[46.74722,24.87525],[46.74713,24.87577],[46.74715,24.87627],[46.74727,24.87649],[46.74563,24.87661],[46.74531,24.87656],[46.74298,24.87562],[46.74283,24.87545],[46.74284,24.87523]]],"3G":[[[46.73834,24.87335],[46.73994,24.8701],[46.74013,24.86995],[46.74036,24.87003],[46.74108,24.87066],[46.74203,24.87175],[46.74408,24.87236],[46.74389,24.87289],[46.7438,24.87285],[46.74368,24.8731],[46.74372,24.87312],[46.74267,24.87517],[46.74242,24.87533],[46.74221,24.87531],[46.73849,24.87377],[46.73832,24.87359],[46.73834,24.87335]]],"3J":[[[46.73841,24.87397],[46.74226,24.87559],[46.74233,24.87574],[46.74233,24.8759],[46.74159,24.87733],[46.74168,24.87737],[46.74153,24.87766],[46.74102,24.877],[46.74017,24.87681],[46.74,24.87692],[46.73979,24.87734],[46.73924,24.87741],[46.73919,24.87734],[46.7386,24.87741],[46.73852,24.8773],[46.73818,24.87752],[46.73707,24.87687],[46.73649,24.8768],[46.73685,24.87636],[46.73798,24.87409],[46.73817,24.87396],[46.73841,24.87397]]],"3K":[[[46.74153,24.87766],[46.74168,24.87736],[46.74177,24.8774],[46.74244,24.87598],[46.74272,24.8758],[46.74292,24.87582],[46.74532,24.87678],[46.74572,24.87681],[46.74731,24.87669],[46.74731,24.87675],[46.74545,24.87686],[46.74502,24.87773],[46.74543,24.8779],[46.74548,24.87799],[46.74532,24.87799],[46.74502,24.87783],[46.74512,24.87798],[46.74325,24.87795],[46.74269,24.8781],[46.74183,24.87819],[46.74153,24.87766]]],"4G":[[[46.72878,24.88022],[46.73075,24.87689],[46.73096,24.87681],[46.73134,24.87699],[46.73162,24.87729],[46.7324,24.87767],[46.73285,24.87773],[46.73319,24.8779],[46.73338,24.87815],[46.73366,24.87831],[46.73412,24.87906],[46.73409,24.87955],[46.73266,24.88197],[46.73246,24.8821],[46.73222,24.88209],[46.72882,24.88042],[46.72878,24.88022]]],"3A":[[[46.73583,24.8668],[46.73575,24.86659],[46.73676,24.86337],[46.73688,24.8633],[46.74223,24.86439],[46.74214,24.86459],[46.73944,24.86753],[46.73925,24.86762],[46.73889,24.86767],[46.73583,24.8668]]],"3I":[[[46.73779,24.87406],[46.73666,24.87634],[46.73624,24.87678],[46.73489,24.87664],[46.73402,24.87586],[46.73371,24.8758],[46.73364,24.87553],[46.73347,24.87549],[46.73341,24.87527],[46.73231,24.87425],[46.73348,24.8721],[46.73361,24.87203],[46.73763,24.87365],[46.7378,24.87383],[46.73779,24.87406]]],"4A":[[[46.73102,24.87644],[46.73231,24.87425],[46.73341,24.87527],[46.73347,24.87549],[46.73364,24.87553],[46.73371,24.8758],[46.73402,24.87586],[46.73489,24.87664],[46.73624,24.87678],[46.73387,24.87776],[46.73338,24.87776],[46.73117,24.87671],[46.73102,24.87644]]],"4J":[[[46.72887,24.88068],[46.72872,24.8806],[46.72848,24.88068],[46.72685,24.8835],[46.72674,24.88358],[46.72661,24.88356],[46.72651,24.88372],[46.72743,24.88455],[46.72829,24.8852],[46.73016,24.88626],[46.73223,24.88269],[46.73227,24.88249],[46.73209,24.88226],[46.72887,24.88068]]],"4F":[[[46.73297,24.88246],[46.73623,24.88406],[46.73653,24.88405],[46.73668,24.88392],[46.73871,24.88055],[46.73875,24.88032],[46.7389,24.8802],[46.7391,24.8795],[46.73761,24.87891],[46.73717,24.87881],[46.73469,24.87926],[46.73426,24.87961],[46.73282,24.88205],[46.73281,24.88228],[46.73297,24.88246]]],"4K":[[[46.73239,24.88277],[46.73027,24.88631],[46.73414,24.88826],[46.73624,24.88466],[46.73627,24.88443],[46.7361,24.88423],[46.73284,24.88263],[46.73259,24.88262],[46.73239,24.88277]]],"4L":[[[46.73445,24.88805],[46.7364,24.88474],[46.7366,24.88459],[46.73687,24.88461],[46.74011,24.8862],[46.74028,24.8864],[46.74025,24.88663],[46.73855,24.88957],[46.73837,24.88979],[46.73846,24.88983],[46.7383,24.89011],[46.73426,24.88831],[46.73445,24.88805]]],"4M":[[[46.7383,24.89011],[46.73846,24.88983],[46.73855,24.88987],[46.73879,24.88939],[46.7405,24.88661],[46.74068,24.88655],[46.74087,24.88658],[46.74223,24.88725],[46.74239,24.88739],[46.74248,24.88764],[46.74244,24.88782],[46.74128,24.88979],[46.74037,24.89112],[46.7383,24.89011]]],"4E":[[[46.7393,24.88046],[46.74087,24.88072],[46.74303,24.8815],[46.74319,24.88164],[46.74069,24.88589],[46.74045,24.88605],[46.74022,24.88602],[46.73698,24.88443],[46.7368,24.88421],[46.73684,24.884],[46.73882,24.88059],[46.73904,24.88044],[46.7393,24.88046]]],"4D":[[[46.74248,24.88714],[46.74095,24.88638],[46.74083,24.88624],[46.74081,24.88606],[46.74325,24.88184],[46.74341,24.88173],[46.74523,24.88324],[46.74535,24.88346],[46.74526,24.88368],[46.74481,24.88403],[46.74442,24.88449],[46.7429,24.88705],[46.74271,24.88717],[46.74248,24.88714]]],"4C":[[[46.74531,24.88322],[46.74351,24.8817],[46.74338,24.88149],[46.74317,24.8815],[46.74089,24.88066],[46.73901,24.88033],[46.73896,24.88022],[46.73916,24.87956],[46.73925,24.87947],[46.73755,24.87882],[46.73718,24.87875],[46.73466,24.87916],[46.73426,24.87892],[46.73382,24.87823],[46.73382,24.87802],[46.73393,24.87791],[46.73615,24.87702],[46.73649,24.8768],[46.73707,24.87687],[46.73818,24.87752],[46.74025,24.87981],[46.74251,24.87948],[46.74511,24.87995],[46.74547,24.88007],[46.74591,24.88041],[46.74738,24.88222],[46.74588,24.88327],[46.74549,24.88331],[46.74531,24.88322]]],"5A":[[[46.74104,24.89145],[46.74093,24.89109],[46.74284,24.88772],[46.74308,24.88773],[46.74463,24.88884],[46.74469,24.88903],[46.74463,24.88919],[46.74241,24.89182],[46.74249,24.89187],[46.74234,24.89209],[46.74104,24.89145]]],"5B":[[[46.74234,24.89209],[46.74249,24.89187],[46.74257,24.89193],[46.74477,24.88929],[46.74498,24.88919],[46.74525,24.88925],[46.74717,24.89057],[46.7475,24.8907],[46.74884,24.89101],[46.74899,24.89111],[46.74906,24.89127],[46.7484,24.89391],[46.74711,24.89372],[46.74566,24.89338],[46.7441,24.89287],[46.74234,24.89209]]],"5C":[[[46.74862,24.89369],[46.74924,24.8914],[46.74939,24.89122],[46.74963,24.89118],[46.75073,24.89142],[46.7511,24.89145],[46.75272,24.89121],[46.7529,24.89126],[46.75303,24.89139],[46.75352,24.89375],[46.75158,24.89399],[46.75004,24.89402],[46.74852,24.89393],[46.74862,24.89369]]],"5I":[[[46.74311,24.88727],[46.74473,24.88453],[46.74501,24.88422],[46.7455,24.88386],[46.74596,24.88384],[46.7475,24.88458],[46.74764,24.88471],[46.74764,24.88496],[46.74595,24.88786],[46.74517,24.8886],[46.74491,24.88866],[46.74471,24.8886],[46.74322,24.88756],[46.74314,24.88748],[46.74311,24.88727]]],"5H":[[[46.752,24.88868],[46.7521,24.88868],[46.75249,24.89103],[46.75109,24.89124],[46.7497,24.89098],[46.74932,24.89073],[46.74886,24.89079],[46.74738,24.89043],[46.74539,24.88908],[46.74526,24.88888],[46.74534,24.88869],[46.7461,24.88795],[46.7478,24.88504],[46.74806,24.8849],[46.7497,24.88562],[46.75155,24.88557],[46.75179,24.88567],[46.75189,24.88586],[46.752,24.88868]]],"5F":[[[46.75249,24.89103],[46.7521,24.88868],[46.7522,24.88868],[46.75205,24.88591],[46.75197,24.88584],[46.75197,24.88573],[46.75235,24.88554],[46.75468,24.88547],[46.75488,24.88571],[46.75495,24.88678],[46.75517,24.88752],[46.75548,24.88803],[46.75619,24.88878],[46.75622,24.88906],[46.75437,24.89063],[46.75401,24.89077],[46.75347,24.89087],[46.753,24.89078],[46.75272,24.89097],[46.75249,24.89103]]],"5D":[[[46.75323,24.89144],[46.75364,24.89373],[46.75525,24.89335],[46.75701,24.89273],[46.75842,24.89204],[46.75925,24.89156],[46.75832,24.89087],[46.75678,24.88936],[46.75652,24.88926],[46.75628,24.88934],[46.7545,24.8908],[46.75408,24.89097],[46.75339,24.89113],[46.75326,24.89126],[46.75323,24.89144]]],"5E":[[[46.76126,24.89024],[46.75947,24.89144],[46.75858,24.89081],[46.75695,24.88921],[46.75678,24.88879],[46.75632,24.88858],[46.75579,24.88805],[46.75547,24.8876],[46.75532,24.88727],[46.75518,24.88675],[46.75511,24.88569],[46.75527,24.88533],[46.75507,24.885],[46.75504,24.8846],[46.75529,24.88453],[46.75582,24.88456],[46.75558,24.88518],[46.75527,24.88519],[46.75528,24.88546],[46.75552,24.88545],[46.75547,24.88619],[46.75558,24.88691],[46.75585,24.8876],[46.75627,24.88823],[46.75681,24.88876],[46.75771,24.8893],[46.75846,24.88954],[46.75951,24.88965],[46.76056,24.88949],[46.7613,24.88921],[46.76194,24.88881],[46.76263,24.88812],[46.76301,24.88751],[46.76326,24.88684],[46.76335,24.88594],[46.7632,24.88506],[46.76337,24.88486],[46.76357,24.88473],[46.76398,24.8846],[46.76552,24.88449],[46.76595,24.8844],[46.76548,24.88535],[46.76372,24.88783],[46.76298,24.8887],[46.76126,24.89024]]],"4B":[[[46.74025,24.87981],[46.73818,24.87752],[46.73852,24.8773],[46.7386,24.87741],[46.73919,24.87734],[46.73924,24.87741],[46.73979,24.87734],[46.74,24.87692],[46.74017,24.87681],[46.74102,24.877],[46.74156,24.8777],[46.74183,24.87819],[46.74269,24.8781],[46.74325,24.87795],[46.74512,24.87798],[46.74502,24.87783],[46.74532,24.87799],[46.74548,24.87799],[46.74543,24.8779],[46.74502,24.87773],[46.74545,24.87686],[46.74759,24.87673],[46.74772,24.87821],[46.74754,24.87826],[46.74769,24.87868],[46.74777,24.87868],[46.74829,24.87924],[46.74889,24.87962],[46.74911,24.87997],[46.74915,24.8802],[46.74955,24.88069],[46.74736,24.88218],[46.7459,24.88041],[46.74564,24.88016],[46.7453,24.88],[46.74251,24.87948],[46.74025,24.87981]]],"2BG":[[[46.77312,24.86262],[46.7728,24.86323],[46.77247,24.86321],[46.77208,24.8635],[46.77166,24.86369],[46.77166,24.86376],[46.77109,24.86393],[46.77025,24.86378],[46.77001,24.86365],[46.7696,24.86329],[46.76915,24.86228],[46.7689,24.86192],[46.76818,24.86148],[46.76786,24.8612],[46.76724,24.86007],[46.76683,24.85962],[46.76142,24.85689],[46.75347,24.85273],[46.75364,24.85243],[46.75377,24.85259],[46.77311,24.86252],[46.77312,24.86262]]],"2BB":[[[46.7599,24.86552],[46.76053,24.86603],[46.76083,24.86617],[46.76121,24.86618],[46.76157,24.866],[46.76187,24.86637],[46.76378,24.86726],[46.76495,24.86439],[46.76723,24.86284],[46.76737,24.86256],[46.76767,24.86248],[46.76784,24.86255],[46.76791,24.86289],[46.76784,24.863],[46.76751,24.8631],[46.7653,24.86461],[46.76512,24.86482],[46.76349,24.86908],[46.76364,24.86942],[46.76342,24.86968],[46.76312,24.86969],[46.76292,24.86961],[46.7628,24.86935],[46.76091,24.86878],[46.76082,24.86863],[46.76094,24.86849],[46.75986,24.86845],[46.75799,24.86824],[46.75804,24.86792],[46.75799,24.86762],[46.75754,24.86655],[46.75764,24.86634],[46.7599,24.86552]]],"2BC":[[[46.76411,24.86742],[46.76487,24.86805],[46.76522,24.86822],[46.7659,24.8684],[46.76631,24.86868],[46.76747,24.86974],[46.76768,24.87032],[46.76796,24.87055],[46.76826,24.87068],[46.76934,24.87093],[46.76954,24.87102],[46.76974,24.87123],[46.77015,24.87133],[46.76974,24.87281],[46.76731,24.87211],[46.76698,24.87225],[46.76677,24.87216],[46.7668,24.87206],[46.76669,24.87187],[46.76342,24.86968],[46.76364,24.86942],[46.76349,24.86908],[46.76411,24.86742]]],"2BE":[[[46.75959,24.85959],[46.75991,24.86022],[46.76029,24.86068],[46.76088,24.86092],[46.76099,24.86132],[46.76123,24.86158],[46.76144,24.86167],[46.76118,24.86227],[46.76145,24.86241],[46.76266,24.8597],[46.76286,24.85963],[46.76309,24.85935],[46.76474,24.85982],[46.76526,24.86002],[46.76602,24.86046],[46.76637,24.86003],[46.76355,24.85852],[46.75731,24.8554],[46.75687,24.85569],[46.75767,24.85618],[46.75942,24.85757],[46.76007,24.85794],[46.76041,24.85798],[46.76064,24.85825],[46.76043,24.85859],[46.76016,24.85864],[46.75959,24.85959]]],"2BA":[[[46.7557,24.86189],[46.7583,24.86096],[46.75851,24.86077],[46.75892,24.8601],[46.75848,24.86004],[46.75848,24.85988],[46.75761,24.85933],[46.75685,24.8587],[46.75695,24.85851],[46.7569,24.8584],[46.75594,24.85785],[46.75621,24.85736],[46.75568,24.85709],[46.75635,24.85599],[46.75667,24.85597],[46.75687,24.85569],[46.75766,24.85618],[46.7594,24.85755],[46.75999,24.85791],[46.76035,24.85795],[46.76054,24.85811],[46.76064,24.85825],[46.76043,24.85859],[46.76016,24.85864],[46.75935,24.85998],[46.75966,24.86017],[46.76063,24.86115],[46.76026,24.86145],[46.75995,24.86131],[46.75985,24.86138],[46.75939,24.8609],[46.75943,24.86086],[46.75895,24.86062],[46.75862,24.8611],[46.7584,24.86124],[46.7559,24.86211],[46.75578,24.86238],[46.75582,24.86204],[46.7557,24.86189]]],"2BD":[[[46.76145,24.86241],[46.76052,24.86186],[46.75997,24.86173],[46.7594,24.86141],[46.75923,24.86102],[46.75884,24.86081],[46.75862,24.8611],[46.75792,24.86141],[46.75888,24.86375],[46.75942,24.86445],[46.75985,24.86454],[46.76023,24.86413],[46.76118,24.86491],[46.76215,24.86389],[46.7626,24.86292],[46.7615,24.86251],[46.76145,24.86241]]],"2BF":[[[46.766,24.86409],[46.76634,24.86445],[46.76657,24.86456],[46.76667,24.86474],[46.76712,24.86478],[46.7686,24.86639],[46.76922,24.86651],[46.76992,24.86693],[46.77079,24.86726],[46.77097,24.86771],[46.77124,24.86799],[46.77215,24.86547],[46.77246,24.86428],[46.77196,24.86444],[46.77115,24.8645],[46.77057,24.86443],[46.77005,24.86428],[46.76948,24.86394],[46.76906,24.86349],[46.76871,24.86284],[46.76864,24.86258],[46.76843,24.86235],[46.76796,24.86256],[46.76784,24.86255],[46.76791,24.86289],[46.76784,24.863],[46.76751,24.8631],[46.766,24.86409]]]};
@@ -1166,7 +2468,7 @@ const AREAS = {"2AH":[[[46.75922,24.84876],[46.75924,24.84888],[46.76122,24.8498
 /* =====================================================================
    دفتر ملاحظات HSE — SEDRA  ·  v3
    ===================================================================== */
-const APP_VERSION = "3.1";
+const APP_VERSION = "3.2";
 /* الصفحة مربوطة بالشيت مباشرة عبر هذا الرابط (Apps Script Web App) — لا يوجد أي إعداد على الجوال */
 const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbwGykUhIRevu8ZfniqsF6xfAtyyXwCwpP5kgdCbvSyp4PWTEhBk3f0ZNIRwQU7ynBaQ/exec";
 /* رابط الشيت نفسه (لزر «فتح الشيت») */
@@ -1250,14 +2552,15 @@ const RANK = {H:3, M:2, L:1, G:0};
 const CAT = {}; CATS.forEach(c => CAT[c.k] = c);
 CAT.other = {k:"other", code:"GEN", ar:"ملاحظة حرة", en:"Other", actAr:""};
 const USAGE_SEED = {opn01:40, hk01:36, exc01:30, ppe01:26, gen01:20, gen02:14, veh01:18, wah04:14, wah01:13, ele09:10, chm01:10, mwp01:9, hk03:8, uc01:8, ele01:7, mat01:7};
+/* رسائل المتابعة — كل وحدة لها أكثر من صيغة وتتبدل كل مرة تنسخها */
 const QMSG = [
-  {ar:"أين الإغلاق؟", en:"Where is the close-out?"},
-  {ar:"اطلب إغلاق ملاحظات اليوم", en:"Kindly share the close-out with photo evidence for today's observations."},
-  {ar:"الإغلاق غير مقبول", en:"Close-out not accepted — the hazard is still present. Rectify it properly and share new photo evidence."},
-  {ar:"ملاحظة متكررة — تصعيد", en:"This is a repeated observation. Close it out today with evidence; otherwise it will be escalated and a violation will be issued."},
-  {ar:"لا يوجد مسؤول سلامة", en:"Where are the Safety Officers? No HSE officer is present at the work area."},
-  {ar:"إيقاف النشاط", en:"Stop the activity immediately until all unsafe conditions are rectified and verified by HSE."},
-  {ar:"تم قبول الإغلاق", en:"Noted. Close-out accepted, thank you."}
+  {ar:"أين الإغلاق؟", en:["Where is the close-out?", "Kindly share the close-out for this observation.", "The close-out is still pending — please share it.", "Any update on the close-out? Please share it with photos."]},
+  {ar:"اطلب إغلاق ملاحظات اليوم", en:["Kindly share the close-out with photo evidence for today's observations.", "Please close out today's observations and share the photos.", "Today's observations are still open — kindly share the close-out with photo evidence.", "All contractors are requested to share today's close-outs with photo evidence."]},
+  {ar:"الإغلاق غير مقبول", en:["Close-out not accepted — the hazard is still present. Rectify it properly and share new photo evidence.", "The close-out is not accepted; the issue has not been fully rectified. Please correct it and resend the photos.", "Not accepted — the condition is still unsafe. Kindly rectify it properly and share fresh photo evidence."]},
+  {ar:"ملاحظة متكررة — تصعيد", en:["This is a repeated observation. Close it out today with evidence; otherwise it will be escalated and a violation will be issued.", "This observation keeps recurring. Close it out today with photo evidence, or it will be escalated and a violation issued.", "Repeated observation — if it is not closed out today with evidence, it will be escalated and a violation will be issued."]},
+  {ar:"لا يوجد مسؤول سلامة", en:["Where are the Safety Officers? No HSE officer is present at the work area.", "No HSE officer is available at the active work area. Kindly assign one immediately.", "The work area has no safety officer present — please arrange HSE supervision right away."]},
+  {ar:"إيقاف النشاط", en:["Stop the activity immediately until all unsafe conditions are rectified and verified by HSE.", "The activity must stop now and may resume only after all unsafe conditions are corrected and verified by HSE.", "Stop the work immediately; it can restart only once HSE has verified the corrections."]},
+  {ar:"تم قبول الإغلاق", en:["Noted. Close-out accepted, thank you.", "Close-out accepted — thank you for the prompt action.", "Well received. The close-out is accepted, thanks.", "Thank you, the close-out is accepted."]}
 ];
 const PHASE_ORDER = ["3", "5", "2A", "2B", "4"];
 const PHASES = {};
@@ -1312,15 +2615,20 @@ function hzList(s){ return String(s || "").split(/[\s,]+/).filter(h => HZ[h]); }
 function buildTemplates(){
   TPL = {}; TPL_LIST = [];
   T.forEach(r => {
-    const base = {id:r[0], cat:r[1], risk:r[2], ar:r[3], np:r[4], act:r[5], hz:hzList(r[6]), builtin:true};
+    const v = (typeof VAR === "object" && VAR[r[0]]) || [[], []];
+    /* npv/actv = كل الصيغ المتاحة (الأصل أولًا) — الصفحة تختار منها صيغة مختلفة كل مرة */
+    const base = {id:r[0], cat:r[1], risk:r[2], ar:r[3], np:r[4], act:r[5], hz:hzList(r[6]), builtin:true,
+      npv:[r[4]].concat(v[0] || []), actv:r[5] ? [r[5]].concat(v[1] || []) : [""]};
     const o = OVER[r[0]];
     const t = o ? Object.assign({}, base, {ar:o.ar || base.ar, np:o.np || base.np, act:o.act != null ? o.act : base.act, risk:o.risk || base.risk, hz: o.hz != null ? hzList(o.hz) : base.hz, edited:true}) : base;
+    if(o){ t.npv = [t.np]; t.actv = [t.act]; } // عدّلتها بنفسك ← تبقى صيغتك
     TPL[t.id] = t; TPL_LIST.push(t);
   });
   CUSTOM.forEach(c => {
     if(!CAT[c.cat]) c.cat = "cond";
     const risk = c.cat === "good" ? "G" : (RISK[c.risk] ? c.risk : "M");
     const t = {id:c.id, cat:c.cat, risk, ar:c.ar, np:c.np, act:c.act || "", hz:hzList(c.hz || CAT[c.cat].hz), custom:true};
+    t.npv = [t.np]; t.actv = [t.act];
     TPL[t.id] = t; TPL_LIST.push(t);
   });
   SEARCH_INDEX = TPL_LIST.map(t => ({t, a: normAr(t.ar), all: normAr([t.ar, t.np, t.act, CAT[t.cat].ar, CAT[t.cat].en, CAT[t.cat].code].join(" "))}));
@@ -1370,12 +2678,52 @@ function wordRx(v){
 function usageScore(id){ return (USAGE_SEED[id] || 0) + (USAGE[id] || 0) * 5; }
 
 /* ---------------- composer ---------------- */
-let draft = Object.assign({sel:[], risk:null, flags:{instructed:false, repeated:false, today:false}, loc:"", text:"", edited:false, gps:"", gpsAt:0}, store.get("hse2_draft", {}));
+let draft = Object.assign({sel:[], risk:null, flags:{instructed:false, repeated:false, today:false}, loc:"", text:"", edited:false, gps:"", gpsAt:0, v:0}, store.get("hse2_draft", {}));
 draft.flags = Object.assign({instructed:false, repeated:false, today:false}, draft.flags || {});
 draft.sel = (draft.sel || []).filter(id => TPL_KEYS_OK(id));
 function TPL_KEYS_OK(id){ return !!(typeof TPL === "object" && (TPL[id] || T.some(r => r[0] === id) || CUSTOM.some(c => c.id === id))); }
 let photos = []; // [{file, blob, url}]
-const saveDraft = () => store.set("hse2_draft", {sel:draft.sel, risk:draft.risk, flags:draft.flags, loc:draft.loc, text:draft.edited ? draft.text : "", edited:draft.edited, gps:draft.gps, gpsAt:draft.gpsAt, gpsArea:draft.gpsArea || ""});
+const saveDraft = () => store.set("hse2_draft", {sel:draft.sel, risk:draft.risk, flags:draft.flags, loc:draft.loc, text:draft.edited ? draft.text : "", edited:draft.edited, gps:draft.gps, gpsAt:draft.gpsAt, gpsArea:draft.gpsArea || "", v:draft.v});
+
+/* ---------------- تنويع الصياغة ----------------
+   كل مسودة لها «بذرة» عشوائية تحدد الصيغة (افتتاحية الجملة، وصف الملاحظة، الخطر، الإجراء، الخاتمة).
+   النص اللي تشوفه هو نفسه اللي ينسخ، وبعد الحفظ تتغير البذرة ← المرة الجاية صيغة ثانية،
+   ونتجنب تكرار نفس الصيغة اللي استخدمتها آخر مرة لكل جزء. */
+const VARIANT_LOCK = (typeof window.__HSE_LOCK === "number") ? window.__HSE_LOCK : null; // للاختبارات فقط
+let VLAST = store.get("hse2_vlast", {});
+const newSeed = () => (Math.floor(Math.random() * 2147483646) + 1);
+if(!draft.v) draft.v = newSeed();
+function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function chooser(seed, canon){
+  const rng = mulberry32(seed || 1), used = {};
+  return {used, pick(slot, n){
+    let i = 0;
+    if(n > 1 && !canon && VARIANT_LOCK == null){
+      i = Math.floor(rng() * n);
+      if(VLAST[slot] === i) i = (i + 1 + Math.floor(rng() * (n - 1))) % n;
+    }else if(n > 1 && VARIANT_LOCK != null) i = VARIANT_LOCK % n;
+    used[slot] = i; return i;
+  }};
+}
+function rememberVariant(used){ Object.assign(VLAST, used || {}); store.set("hse2_vlast", VLAST); }
+const lcFirst = s => /^[A-Z][a-z]/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s;
+const NOT_VERB = /^(The|Workers|Scaffolders|No|Never|Do|Only|All|Nobody)\b/;
+const PH = {
+  open: ["Observed {np}", "During the site inspection, we observed {np}", "During today's site visit, we noticed {np}", "Noted on site: {np}", "We found {np}", "The site inspection revealed {np}"],
+  haz: [", creating {hz}", ", which poses {hz}", ", exposing workers to {hz}", ". This creates {hz}", ", resulting in {hz}"],
+  closeHStop: ["Work shall not resume until all violations are rectified.", "The activity must remain stopped until this is fully rectified.", "Work must not restart until the area is made safe and verified by HSE."],
+  closeH: ["Stop the activity immediately and rectify all violations before work resumes.", "The activity must be stopped immediately until this is rectified.", "Stop the work immediately; it shall not resume until the hazard is removed."],
+  closeM: ["Immediate corrective action is required.", "Please rectify this immediately.", "This requires immediate corrective action.", "Corrective action is required without delay."],
+  closeL: ["Kindly rectify and share the close-out.", "Please rectify and share the close-out photos.", "Kindly arrange to correct this and share the close-out.", "Please correct this and confirm the close-out."],
+  instH: [" The activity was stopped on site and corrective action was instructed.", " The work was stopped on the spot and the supervisor was instructed to rectify it.", " The activity was stopped during the inspection and corrective action was instructed."],
+  instM: ["Immediate corrective action was instructed on site.", "The site supervisor was instructed to rectify it immediately.", "Corrective action was instructed on the spot."],
+  instL: ["Corrective action was instructed on site. ", "The supervisor was informed on site. "],
+  todayL: ["Rectify and share the close-out with photo evidence today.", "Please rectify and share the close-out photos today.", "Kindly rectify it and send the close-out with photos today."],
+  today: [" Share the close-out with photo evidence today.", " Please share the close-out photos today.", " Close-out with photo evidence is required today."],
+  rep: [" This is a repeated observation; failure to close it out will result in escalation.", " This observation has been raised before; if it is not closed out, it will be escalated.", " This is a recurring issue and will be escalated if not closed out."],
+  good: ["Good practice observed: {np}. Well done to the team — keep maintaining this standard.", "Positive observation: {np}. Great work by the team — please keep it up.", "Good to see {np}. Thank you to the team — keep maintaining this standard.", "Appreciated on site: {np}. Well done, and please keep up this standard."]
+};
+const fill = (s, k, v) => s.replace("{" + k + "}", v);
 
 function article(w){ return /^[aeiou]/i.test(w) ? "an" : "a"; }
 function hazEn(keys){ const w = keys.map(k => HZ[k][0]); return w.length === 1 ? article(w[0]) + " " + w[0] + " hazard" : joinEn(w) + " hazards"; }
@@ -1387,34 +2735,46 @@ function autoRisk(items){
 }
 function compose(items, opt){
   opt = opt || {};
+  const ch = chooser(opt.seed, opt.canon);
   const bad = items.filter(t => t.risk !== "G"), good = items.filter(t => t.risk === "G");
   const risk = opt.risk || autoRisk(items);
   const f = opt.flags || {};
+  const npOf = t => { const v = t.npv || [t.np]; return v[ch.pick("np:" + t.id, v.length)]; };
+  const actOf = t => { const v = (t.actv && t.actv[0]) ? t.actv : [t.act]; return v[ch.pick("act:" + t.id, v.length)]; };
   let en = "", ar = "";
   if(bad.length){
     const hz = []; bad.forEach(t => t.hz.forEach(h => { if(!hz.includes(h)) hz.push(h); }));
     const hz4 = hz.slice(0, 4);
-    en = "Observed " + joinEn(bad.map(t => t.np)) + (hz4.length ? ", creating " + hazEn(hz4) : "") + ".";
+    const opener = PH.open[ch.pick("open", PH.open.length)];
+    en = fill(opener, "np", joinEn(bad.map(npOf))) + (hz4.length ? fill(PH.haz[ch.pick("haz", PH.haz.length)], "hz", hazEn(hz4)) : "") + ".";
+    let startsStop = false;
     if(bad.length <= 3){
-      const acts = []; bad.forEach(t => { if(t.act && !acts.includes(t.act)) acts.push(t.act); });
-      if(acts.length) en += " " + acts.join(" ");
+      const acts = []; bad.forEach(t => { const a = actOf(t); if(a && !acts.includes(a)) acts.push(a); });
+      startsStop = acts.some(a => /^Stop\b/.test(a));
+      if(acts.length){
+        let a = acts.join(" ");
+        const st = ch.pick("actStyle", 4);
+        if(st === 1) a = "Required action: " + a;
+        else if(st === 2 && risk !== "H" && !startsStop && !NOT_VERB.test(a)) a = "Kindly " + lcFirst(a);
+        else if(st === 3 && !/^Stop\b/.test(a) && !NOT_VERB.test(a)) a = "The contractor shall " + lcFirst(a);
+        en += " " + a;
+      }
     }
-    const startsStop = bad.length <= 3 && bad.some(t => /^Stop\b/.test(t.act));
     let close;
-    if(risk === "H") close = startsStop ? "Work shall not resume until all violations are rectified." : "Stop the activity immediately and rectify all violations before work resumes.";
-    else if(risk === "M") close = "Immediate corrective action is required.";
-    else close = "Kindly rectify and share the close-out.";
+    if(risk === "H") close = startsStop ? PH.closeHStop[ch.pick("closeHStop", PH.closeHStop.length)] : PH.closeH[ch.pick("closeH", PH.closeH.length)];
+    else if(risk === "M") close = PH.closeM[ch.pick("closeM", PH.closeM.length)];
+    else close = PH.closeL[ch.pick("closeL", PH.closeL.length)];
     if(f.instructed){
-      if(risk === "H") close += " The activity was stopped on site and corrective action was instructed.";
-      else if(risk === "M") close = "Immediate corrective action was instructed on site.";
-      else close = "Corrective action was instructed on site. " + close;
+      if(risk === "H") close += PH.instH[ch.pick("instH", PH.instH.length)];
+      else if(risk === "M") close = PH.instM[ch.pick("instM", PH.instM.length)];
+      else close = PH.instL[ch.pick("instL", PH.instL.length)] + close;
     }
     if(f.today){
-      if(risk === "L" && !f.instructed) close = "Rectify and share the close-out with photo evidence today.";
-      else close += " Share the close-out with photo evidence today.";
+      if(risk === "L" && !f.instructed) close = PH.todayL[ch.pick("todayL", PH.todayL.length)];
+      else close += PH.today[ch.pick("today", PH.today.length)];
     }
     en += " " + close;
-    if(f.repeated) en += " This is a repeated observation; failure to close it out will result in escalation.";
+    if(f.repeated) en += PH.rep[ch.pick("rep", PH.rep.length)];
 
     ar = "لوحظ: " + joinAr(bad.map(t => t.ar)) + (hz4.length ? "، مما يشكل " + hazAr(hz4) : "") + ".";
     const cats = []; bad.forEach(t => { if(!cats.includes(t.cat)) cats.push(t.cat); });
@@ -1433,12 +2793,12 @@ function compose(items, opt){
     if(f.repeated) ar += " ملاحظة متكررة، وعدم إغلاقها سيؤدي إلى التصعيد.";
   }
   if(good.length){
-    const g = "Good practice observed: " + joinEn(good.map(t => t.np)) + ". Well done to the team — keep maintaining this standard.";
+    const g = fill(PH.good[ch.pick("good", PH.good.length)], "np", joinEn(good.map(npOf)));
     const ga = "ممارسة جيدة: " + joinAr(good.map(t => t.ar)) + ". عمل ممتاز، يرجى المحافظة على هذا المستوى.";
     en = en ? en + "\n\n" + g : g;
     ar = ar ? ar + "\n" + ga : ga;
   }
-  return {en, ar, risk};
+  return {en, ar, risk, used: ch.used};
 }
 function selItems(){ return draft.sel.map(id => TPL[id]).filter(Boolean); }
 function locLine(area, loc){ loc = String(loc || "").trim(); if(loc && area) return loc + "/" + area; return loc || area || ""; }
@@ -1451,10 +2811,16 @@ function buildMessage(text, area, loc){
 }
 function currentDraft(){
   const items = selItems();
-  const c = compose(items, {risk: draft.risk, flags: draft.flags});
+  const c = compose(items, {risk: draft.risk, flags: draft.flags, seed: draft.v});
   const text = (draft.edited && String(draft.text || "").trim()) ? draft.text : c.en;
   const risk = draft.risk || (items.length ? c.risk : "M");
-  return {items, text, ar: items.length ? c.ar : "", risk};
+  return {items, text, ar: items.length ? c.ar : "", risk, used: draft.edited ? null : c.used};
+}
+/* «صيغة ثانية»: بذرة جديدة لين يطلع نص مختلف عن الحالي */
+function shufflePhrasing(){
+  const before = currentDraft().text;
+  for(let k = 0; k < 12; k++){ draft.v = newSeed(); if(currentDraft().text !== before) break; }
+  saveDraft(); renderDock(); vib();
 }
 
 /* ---------------- area picker ---------------- */
@@ -1620,6 +2986,7 @@ function renderDock(){
   const ta = $("#outText");
   if(document.activeElement !== ta) ta.value = d.text;
   $("#regenBtn").hidden = !(draft.edited && n);
+  $("#shuffleBtn").hidden = !(n && !draft.edited);
   const arBox = $("#arSum"); arBox.hidden = !d.ar; arBox.textContent = d.ar;
   $("#saveTplBtn").hidden = !(draft.edited && !n && hasText);
   const line = locLine(S.area, draft.loc);
@@ -1639,7 +3006,7 @@ function renderPhotos(){
 }
 function clearDraft(keepToast){
   draft.sel = []; draft.risk = null; draft.flags = {instructed:false, repeated:false, today:false};
-  draft.text = ""; draft.edited = false; draft.loc = "";
+  draft.text = ""; draft.edited = false; draft.loc = ""; draft.v = newSeed();
   photos.forEach(p => { try{ URL.revokeObjectURL(p.url); }catch(e){} }); photos = [];
   saveDraft(); renderArea(); refreshSelectionUI(); renderDock();
   if(!keepToast) toast("تم مسح المسودة");
@@ -1722,11 +3089,15 @@ function sameAsLast(rec){
   const last = OBS[0];
   return !!last && last.text === rec.text && last.area === rec.area && last.loc === rec.loc && (Date.now() - Date.parse(last.createdAt) < 20 * 1000);
 }
+let vlastBeforeSave = null;
 function commitDraft(){
   const rec = recFromDraft();
   if(!rec.text) return null;
   if(sameAsLast(rec)) return OBS[0];
   OBS.unshift(rec); saveObs();
+  /* نتذكر الصيغة اللي انرسلت عشان المرة الجاية تطلع غيرها */
+  vlastBeforeSave = JSON.parse(JSON.stringify(VLAST));
+  rememberVariant(currentDraft().used);
   rec.items.forEach(id => USAGE[id] = (USAGE[id] || 0) + 1); store.set("hse2_usage", USAGE);
   queue({op:"upsertObs", obs: rec});
   const ph = photos.slice();
@@ -1743,12 +3114,14 @@ function commitDraft(){
   return rec;
 }
 function afterSave(rec, how){
-  const undoSnap = {sel: draft.sel.slice(), risk: draft.risk, flags: Object.assign({}, draft.flags), loc: draft.loc, text: draft.text, edited: draft.edited};
+  const undoSnap = {sel: draft.sel.slice(), risk: draft.risk, flags: Object.assign({}, draft.flags), loc: draft.loc, text: draft.text, edited: draft.edited, v: draft.v};
+  const vlastSnap = vlastBeforeSave;
   clearDraft(true); setDock(false);
   renderBadges(); renderQuick(); if(currentTab === "log") renderLog();
-  const synced = S.url ? " · بيرتفع للشيت" : "";
+  const synced = !S.url ? "" : S.needsUpdate ? " · محفوظة بالجوال لين يتحدث كود الشيت" : " · بيرتفع للشيت";
   toast((how === "wa" ? "تم الحفظ وفتح واتساب" : "تم النسخ والحفظ ✓") + synced, "تراجع", () => {
     deleteRec(rec.id, true);
+    if(vlastSnap){ VLAST = vlastSnap; store.set("hse2_vlast", VLAST); }
     Object.assign(draft, undoSnap); saveDraft(); renderArea(); refreshSelectionUI(); renderDock();
     toast("تم التراجع");
   });
@@ -1833,7 +3206,7 @@ async function api(method, payload, ms){
     }
     const txt = await res.text();
     try{ return JSON.parse(txt); }
-    catch(e){ throw new Error(/<html|<!doctype/i.test(txt) ? "الرابط يرجّع صفحة بدل بيانات — تأكد إن النشر Who has access: Anyone" : "رد غير مفهوم من الشيت"); }
+    catch(e){ throw new Error(/<html|<!doctype/i.test(txt) ? "الشيت يرجّع صفحة بدل بيانات — غالبًا يحتاج موافقة الصلاحيات: افتح Apps Script وشغّل setup، وتأكد إن النشر Who has access: Anyone" : "رد غير مفهوم من الشيت"); }
   }catch(e){
     if(e && e.name === "AbortError") throw new Error("انتهت مهلة الاتصال — الشبكة ضعيفة، بنعيد المحاولة تلقائيًا");
     if(e instanceof TypeError) throw new Error("تعذر الوصول للشيت — الشبكة ضعيفة أو النشر مو على Anyone. بنعيد المحاولة تلقائيًا");
@@ -1851,15 +3224,40 @@ async function opPayload(op){
   if(!blob) return null;
   return {op:"photo", id:op.id, idx:op.idx, name:op.name, mime:"image/jpeg", data: await blobToB64(blob)};
 }
+/* ---------- كود الشيت القديم: بطاقة التحديث تظهر فقط وقت الحاجة ---------- */
+function isOldCode(r){ return !!r && !r.app && !!(r.villas || r.templates || r.status); }
+function markOldCode(old){
+  old = !!old;
+  if(!!S.needsUpdate !== old){ S.needsUpdate = old; saveS(); }
+  renderFixCard();
+}
+function renderFixCard(){
+  const c = $("#fixCard"); if(!c) return;
+  c.hidden = !S.needsUpdate;
+  $("#fixCount").textContent = OUTBOX.filter(o => o.op === "upsertObs").length;
+}
+async function recheckSheet(btn){
+  if(!navigator.onLine){ toast("بدون إنترنت الآن — جرّب بعد ما يرجع النت"); return; }
+  const label = btn.textContent; btn.disabled = true; btn.textContent = "جاري التأكد…";
+  S.verifiedUrl = "";
+  try{
+    await verifyScript();
+    toast("تمام ✓ الشيت صار يحفظ الملاحظات", "فتح الشيت", openSheet, 7000);
+    await syncNow(false); pull(false);
+  }catch(e){
+    toast(S.needsUpdate ? "لسه يرد بالكود القديم — تأكد إنك سويت Manage deployments ← ✎ ← New version على نفس النشر (مو New deployment)" : e.message, null, null, 9000);
+  }finally{ btn.disabled = false; btn.textContent = label; }
+}
 /* نتأكد إن الرابط فيه الكود الجديد قبل أي كتابة (حماية لبيانات الشيت من الكود القديم) */
 async function verifyScript(){
   if(S.verifiedUrl === S.url) return true;
   const r = await api("GET", {action:"ping"}, 25000);
   if(r && r.ok && r.app === "sedra-hse"){
     S.verifiedUrl = S.url; S.sheetUrl = r.sheetUrl || S.sheetUrl || ""; S.sheetName = r.sheetName || S.sheetName || ""; saveS();
+    markOldCode(false);
     return true;
   }
-  if(r && (r.villas || r.templates || r.status)) throw new Error(OLD_CODE_MSG);
+  if(isOldCode(r)){ markOldCode(true); throw new Error(OLD_CODE_MSG); }
   throw new Error((r && r.error) || "الشيت يرد لكن مو بالشكل المتوقع");
 }
 async function syncNow(manual){
@@ -1882,7 +3280,7 @@ async function syncNow(manual){
       if(payloads.length){
         const res = await api("POST", {ops: payloads, device: DEVICE, v: APP_VERSION}, batch[0].op === "photo" ? 90000 : 30000);
         if(!res || res.ok !== true){
-          if(res && (res.legacy || res.status)) throw new Error(OLD_CODE_MSG);
+          if(res && (res.legacy || res.status)){ S.verifiedUrl = ""; markOldCode(true); throw new Error(OLD_CODE_MSG); }
           throw new Error((res && res.error) || "رفض الشيت الطلب");
         }
         results = res.results || [];
@@ -1975,7 +3373,9 @@ async function pull(manual, all){
     if(manual) setSync("busy", "جاري السحب من الشيت…");
     const since = all ? "" : ymd(addDays(new Date(), -60));
     const res = await api("GET", {action:"list", since, limit: all ? 5000 : 1500}, 45000);
-    if(!res || res.ok !== true) throw new Error((res && res.error) || (res && !res.app ? OLD_CODE_MSG : "تعذر السحب من الشيت"));
+    if(isOldCode(res)){ markOldCode(true); throw new Error(OLD_CODE_MSG); }
+    if(!res || res.ok !== true) throw new Error((res && res.error) || "تعذر السحب من الشيت");
+    markOldCode(false);
     const m = mergeRemote(res.observations);
     mergeTemplates(res.templates);
     lastPullAt = new Date().toISOString(); store.set("hse2_lastPull", lastPullAt);
@@ -2004,6 +3404,7 @@ function renderSyncPill(){
   else { cls = "ok"; txt = "متزامن"; }
   p.className = "pill " + cls; t.textContent = txt;
   p.title = syncState.msg || (lastPullAt ? "آخر تحديث " + new Date(lastPullAt).toLocaleTimeString("ar-u-nu-latn", {hour:"2-digit", minute:"2-digit"}) : "");
+  renderFixCard();
 }
 
 /* ---------------- log view ---------------- */
@@ -2071,7 +3472,23 @@ function remindText(list){
   const open = list.filter(r => r.status === "open");
   if(!open.length) return "";
   const lines = open.slice(0, 25).map((r, i) => (i + 1) + ". " + fmtDayEn(r.date).replace(/ \d{4}$/, "") + " · " + (locLine(r.area, r.loc) || "Site") + " — " + shortDesc(r));
-  return "Kind reminder — the following observation" + (open.length > 1 ? "s are" : " is") + " still open. Please share the close-out" + (open.length > 1 ? "s" : "") + " with photo evidence today.\n\n" + lines.join("\n") + (open.length > 25 ? "\n… and " + (open.length - 25) + " more." : "");
+  const intros = open.length > 1 ? REMIND.many : REMIND.one;
+  return pickFresh("remind", intros) + "\n\n" + lines.join("\n") + (open.length > 25 ? "\n… and " + (open.length - 25) + " more." : "");
+}
+const REMIND = {
+  one: ["Kind reminder — the following observation is still open. Please share the close-out with photo evidence today.",
+        "Gentle reminder: this observation is still pending close-out. Kindly share the photo evidence today.",
+        "Follow-up — the observation below remains open. Please close it out and share the photos today."],
+  many: ["Kind reminder — the following observations are still open. Please share the close-outs with photo evidence today.",
+         "Gentle reminder: these observations are still pending close-out. Kindly share the photo evidence today.",
+         "Follow-up — the observations below remain open. Please close them out and share the photos today."]
+};
+/* يختار صيغة عشوائية غير اللي استخدمتها آخر مرة لنفس الرسالة */
+function pickFresh(slot, list){
+  const ch = chooser(newSeed());
+  const i = ch.pick(slot, list.length);
+  rememberVariant(ch.used);
+  return list[i];
 }
 function openEditor(id){
   const r = findRec(id); if(!r) return;
@@ -2158,7 +3575,7 @@ function renderReports(){
 function tplPreview(cat, risk, np, act){
   if(!np) return "";
   const t = {id:"_new", cat, risk: cat === "good" ? "G" : risk, ar:"", np, act, hz: hzList(CAT[cat].hz)};
-  return compose([t], {}).en;
+  return compose([t], {canon: true}).en;
 }
 function openAddOwn(prefill){
   prefill = prefill || {};
@@ -2278,9 +3695,16 @@ function bind(){
   $$(".tab").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
   $("#syncPill").addEventListener("click", () => {
     if(!S.url){ toast("الشيت غير مربوط بعد — ملاحظاتك محفوظة بالجوال وبترتفع تلقائيًا أول ما ينربط"); return; }
+    if(S.needsUpdate){ showTab("new"); setTimeout(() => $("#fixCard").scrollIntoView({block:"start", behavior:"smooth"}), 50); }
     if(!navigator.onLine){ toast("بدون إنترنت الآن — بنرفع تلقائيًا أول ما يرجع"); return; }
     syncNow(false).then(() => pull(true));
   });
+  /* بطاقة تحديث كود الشيت */
+  $("#copyGasBtn").addEventListener("click", () => {
+    copyText($("#gasCode").textContent.trim()).then(ok => toast(ok ? "تم نسخ الكود الجديد ✓ الصقه في Apps Script مكان القديم" : "ما قدرت أنسخ هنا — جرّب من الكمبيوتر", null, null, 5000));
+  });
+  $("#fixOpenSheet").addEventListener("click", openSheet);
+  $("#fixRetry").addEventListener("click", e => recheckSheet(e.currentTarget));
   $("#themeBtn").addEventListener("click", () => { S.theme = S.theme === "auto" ? "dark" : S.theme === "dark" ? "light" : "auto"; saveS(); applyTheme(); toast(S.theme === "auto" ? "المظهر: حسب الجهاز" : S.theme === "dark" ? "المظهر: ليلي" : "المظهر: نهاري (للشمس)"); });
 
   /* area */
@@ -2320,6 +3744,7 @@ function bind(){
   $("#repHint").addEventListener("click", e => { if(e.target.closest("#markRep")){ draft.flags.repeated = true; saveDraft(); renderDock(); toast("تم تعليمها متكررة — أضفت جملة التصعيد للنص"); } });
   $("#outText").addEventListener("input", e => { draft.text = e.target.value; draft.edited = true; saveDraft(); renderDock(); });
   $("#regenBtn").addEventListener("click", () => { draft.edited = false; draft.text = ""; saveDraft(); $("#outText").blur(); renderDock(); });
+  $("#shuffleBtn").addEventListener("click", shufflePhrasing);
   $("#photos").addEventListener("click", e => {
     if(e.target.closest("#addPhoto")){ $("#photoInput").click(); return; }
     const x = e.target.closest("[data-ph]"); if(x){ const i = +x.dataset.ph; try{ URL.revokeObjectURL(photos[i].url); }catch(er){} photos.splice(i, 1); renderPhotos(); }
@@ -2327,7 +3752,7 @@ function bind(){
   $("#photoInput").addEventListener("change", e => { addPhotos(e.target.files).then(() => { e.target.value = ""; }); });
 
   /* log */
-  $("#qmsgs").addEventListener("click", e => { const b = e.target.closest("[data-q]"); if(!b) return; copyText(QMSG[+b.dataset.q].en).then(() => toast("تم نسخ الرسالة ✓")); });
+  $("#qmsgs").addEventListener("click", e => { const b = e.target.closest("[data-q]"); if(!b) return; const i = +b.dataset.q; copyText(pickFresh("q" + i, QMSG[i].en)).then(() => toast("تم نسخ الرسالة ✓ (كل مرة بصيغة)")); });
   $("#logPeriod").addEventListener("click", e => { const b = e.target.closest("button"); if(!b) return; logF.period = b.dataset.v; logLimit = 150; renderLog(); });
   $("#logStatus").addEventListener("click", e => { const b = e.target.closest("button"); if(!b) return; logF.status = b.dataset.v; renderLog(); });
   $("#logPhase").addEventListener("click", e => { const b = e.target.closest("button"); if(!b) return; logF.phase = b.dataset.v; renderLog(); });
@@ -2389,8 +3814,8 @@ function init(){
   buildTemplates();
   draft.sel = draft.sel.filter(id => TPL[id]);
   applyTheme();
-  $("#qmsgs").innerHTML = QMSG.map((m, i) => '<button type="button" class="btn" data-q="' + i + '" title="' + esc(m.en) + '">' + esc(m.ar) + "</button>").join("");
-  renderArea(); renderQuick(); renderCats(); renderDock(); renderBadges(); renderSyncPill();
+  $("#qmsgs").innerHTML = QMSG.map((m, i) => '<button type="button" class="btn" data-q="' + i + '" title="' + esc(m.en[0]) + '">' + esc(m.ar) + "</button>").join("");
+  renderArea(); renderQuick(); renderCats(); renderDock(); renderBadges(); renderSyncPill(); renderFixCard();
   bind();
   if(S.url && navigator.onLine){ setTimeout(() => { syncNow(false); pull(false); }, 600); }
   setInterval(() => { if(!document.hidden && S.url && navigator.onLine){ if(OUTBOX.length) syncNow(false); pull(false); } }, 5 * 60 * 1000);
