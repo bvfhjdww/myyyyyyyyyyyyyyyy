@@ -1,11 +1,12 @@
 /**
- * دفتر ملاحظات HSE — SEDRA · Google Sheets backend (v3)
+ * دفتر ملاحظات HSE — SEDRA · Google Sheets backend (v3.1)
  * ------------------------------------------------------------------
- * 1) افتح الشيت ← Extensions ← Apps Script ← احذف الكود القديم والصق هذا الكود ← Save
- * 2) اختر الدالة setup من الأعلى واضغط Run مرة وحدة ← وافق على الصلاحيات (Sheets + Drive)
- * 3) عندك نشر قديم؟  Deploy ← Manage deployments ← ✎ Edit ← Version: New version ← Deploy  (الرابط يبقى نفسه)
- *    أول مرة؟        Deploy ← New deployment ← Web app ← Execute as: Me ← Who has access: Anyone ← Deploy
- * الكود يضيف تبويبات: Observations · Custom Templates · Summary — ولا يلمس تبويبات Villas / Templates القديمة.
+ * مرة وحدة فقط:
+ * 1) احذف الكود القديم كله والصق هذا مكانه ← Save
+ * 2) اختر setup من القائمة فوق ← Run ← وافق على الصلاحيات
+ * 3) Deploy ← Manage deployments ← ✎ ← Version: New version ← Deploy   (الرابط يبقى نفسه)
+ * يضيف تبويبات Observations · Summary · Custom Templates — ولا يغيّر تبويبات Villas / Templates القديمة
+ * (ملاحظاتك الخاصة القديمة في Templates تنقرأ وتظهر في الصفحة الجديدة).
  */
 var SHEET_ID = '1GVG6mwqdIGwz3Friq5JOcIc94LC7kMtJ02wIWjZ2JZE';
 var APP = 'sedra-hse';
@@ -13,7 +14,12 @@ var VERSION = 3;
 var OBS_TAB = 'Observations';
 var TPL_TAB = 'Custom Templates';
 var SUM_TAB = 'Summary';
+var LEGACY_TPL_TAB = 'Templates';
 var PHOTO_FOLDER = 'SEDRA HSE Photos';
+/* تصنيفات الصفحة القديمة ← التصنيفات الجديدة */
+var LEGACY_CAT = {ppe: 'ppe', helmet: 'ppe', shoes: 'ppe', fall: 'wah', height: 'wah', scaffold: 'scaf',
+  excavation: 'exc', electrical: 'elec', fire: 'fire', housekeeping: 'hk', weather: 'wel', access: 'cond',
+  acts: 'acts', conditions: 'cond', barricading: 'open', lifting: 'lift', tools: 'tools'};
 
 var OBS_COLS = [
   ['id', 'Ref'], ['date', 'Date'], ['time', 'Time'], ['phase', 'Phase'], ['area', 'Area'], ['loc', 'Location'],
@@ -325,11 +331,36 @@ function upsertTpl_(ss, t) {
 function listTpl_(ss) {
   var sh = ss.getSheetByName(TPL_TAB);
   var last = sh.getLastRow();
-  if (last < 2) return [];
-  return sh.getRange(2, 1, last - 1, TPL_COLS.length).getValues().map(function (r) {
+  var list = last < 2 ? [] : sh.getRange(2, 1, last - 1, TPL_COLS.length).getValues().map(function (r) {
     return {id: String(r[0]), cat: String(r[1]), risk: String(r[2]), ar: String(r[3]), np: String(r[4]), act: String(r[5]),
       hz: String(r[6]), updatedAt: String(r[7]), deleted: String(r[8]).toLowerCase() === 'yes'};
   }).filter(function (t) { return t.id; });
+  var seen = {};
+  list.forEach(function (t) { seen[t.id] = true; });
+  try {
+    legacyTpl_(ss).forEach(function (t) { if (!seen[t.id]) { seen[t.id] = true; list.push(t); } });
+  } catch (x) {}
+  return list;
+}
+
+/** ملاحظاتك الخاصة من الصفحة القديمة (تبويب Templates) — قراءة فقط، وأي تعديل/حذف لها ينحفظ في Custom Templates */
+function legacyTpl_(ss) {
+  var sh = ss.getSheetByName(LEGACY_TPL_TAB);
+  if (!sh || sh.getLastRow() < 2) return [];
+  return sh.getRange(2, 1, sh.getLastRow() - 1, 4).getValues().map(function (r) {
+    var key = String(r[0] || '').trim(), ar = String(r[1] || '').trim(), en = String(r[2] || '').trim();
+    if (!key || !ar || !en) return null;
+    var np = en.replace(/^observed\s+/i, '').replace(/[.\s]+$/, '');
+    if (/^[A-Z][a-z]/.test(np)) np = np.charAt(0).toLowerCase() + np.slice(1);
+    return {id: 'L-' + hash_(key + '|' + ar + '|' + en), cat: LEGACY_CAT[key] || 'cond',
+      risk: String(r[3]).toLowerCase() === 'true' ? 'H' : 'M', ar: ar, np: np, act: '', hz: '',
+      updatedAt: '2000-01-01T00:00:00.000Z', deleted: false, legacy: true};
+  }).filter(function (t) { return t; });
+}
+
+function hash_(s) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, s, Utilities.Charset.UTF_8).slice(0, 5)
+    .map(function (b) { return ('0' + (b & 255).toString(16)).slice(-2); }).join('');
 }
 
 /* ---------------- summary tab ---------------- */

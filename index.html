@@ -335,23 +335,14 @@ pre.preview{
   background:var(--panel-2);border-radius:10px;padding:10px 12px;font-family:var(--mono);font-size:12.5px;line-height:1.6;max-height:300px;overflow:auto;
 }
 
-/* ---------- settings ---------- */
-.set-sec{display:flex;flex-direction:column;gap:10px}
+/* ---------- ملاحظاتك الخاصة ---------- */
+.add-own{width:100%;margin-top:10px;border-style:dashed;color:var(--muted);padding:12px}
+.own{font-size:10.5px;font-weight:700;border-radius:6px;padding:1px 6px;flex:none;margin-top:2px;background:var(--accent-soft);color:var(--ink);border:1px solid var(--accent)}
 .set-row{display:flex;flex-direction:column;gap:6px}
 .set-row label{font-size:13px;font-weight:600}
-.status-box{border:1px dashed var(--line);border-radius:10px;padding:9px 11px;font-size:13px;color:var(--muted)}
-.status-box.ok{border-color:var(--good);color:var(--good)}
-.status-box.err{border-color:var(--high);color:var(--high)}
-.steps{margin:0;padding-inline-start:20px;font-size:13.5px;line-height:1.95;color:var(--ink)}
-.steps code{font-family:var(--mono);font-size:12px;background:var(--panel-2);padding:1px 5px;border-radius:5px;direction:ltr;unicode-bidi:isolate}
-details.more{border:1px solid var(--line);border-radius:10px;padding:0 12px}
-details.more summary{cursor:pointer;padding:10px 0;font-weight:600;font-size:13.5px;list-style:none}
-details.more summary::-webkit-details-marker{display:none}
-details.more[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
-details.more > div{padding-bottom:12px;display:flex;flex-direction:column;gap:10px}
-.tpl-row{display:flex;gap:8px;align-items:flex-start;background:var(--panel-2);border-radius:10px;padding:8px 10px;font-size:13px}
-.tpl-row .t{flex:1;min-width:0}
-.tpl-row .t span{display:block;color:var(--muted);font-size:12px}
+.modal-in textarea.field{min-height:66px}
+.ao-prev{direction:ltr;text-align:left;background:var(--panel-2);border-radius:10px;padding:9px 11px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.ao-prev:empty{display:none}
 
 /* ---------- modal / toast ---------- */
 .modal{position:fixed;inset:0;z-index:60;background:rgba(10,12,14,.55);display:flex;align-items:flex-end;justify-content:center;padding:10px}
@@ -362,7 +353,7 @@ details.more > div{padding-bottom:12px;display:flex;flex-direction:column;gap:10
   background:var(--ink);color:var(--panel);border-radius:12px;padding:10px 14px;font-size:13.5px;font-weight:600;
   display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);max-width:calc(100vw - 32px);
 }
-.toast button{border:0;background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:5px 10px;font-weight:700;font-size:13px}
+.toast button{border:0;background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:5px 10px;font-weight:700;font-size:13px;white-space:nowrap;flex:none}
 body.no-dock .toast{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
 
 @media (max-width:380px){
@@ -384,7 +375,7 @@ body.no-dock .toast{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
       <h1>دفتر ملاحظات HSE</h1>
       <small>SEDRA · <span id="hdrArea">Phase 5</span></small>
     </div>
-    <button class="pill" id="syncPill" type="button" aria-label="حالة الربط مع الشيت"><span class="dot"></span><span id="syncTxt">غير مربوط</span></button>
+    <button class="pill" id="syncPill" type="button" aria-label="حالة الربط مع الشيت"><span class="dot"></span><span id="syncTxt">الشيت</span></button>
     <button class="icon-btn" id="themeBtn" type="button" aria-label="تبديل المظهر">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>
     </button>
@@ -393,7 +384,6 @@ body.no-dock .toast{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
     <button class="tab" type="button" role="tab" data-tab="new" aria-selected="true">ملاحظة</button>
     <button class="tab" type="button" role="tab" data-tab="log" aria-selected="false">السجل<span class="badge" id="openBadge" hidden></span></button>
     <button class="tab" type="button" role="tab" data-tab="rep" aria-selected="false">التقارير</button>
-    <button class="tab" type="button" role="tab" data-tab="set" aria-selected="false">الإعدادات</button>
   </nav>
   <div class="hazard"></div>
 </header>
@@ -432,6 +422,7 @@ body.no-dock .toast{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
     </div>
 
     <div class="cats" id="cats"></div>
+    <button class="btn ghost add-own" id="addOwnBtn" type="button">+ أضف ملاحظة خاصة للقائمة</button>
   </section>
 
   <!-- ============ السجل ============ -->
@@ -471,99 +462,11 @@ body.no-dock .toast{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
       <pre class="preview" id="summaryPrev"></pre>
       <div class="row" style="margin-top:10px">
         <button class="btn sm" id="copyRemind2" type="button">نسخ تذكير بالمفتوحة</button>
-        <button class="btn sm" id="csvBtn" type="button">تنزيل Excel (CSV)</button>
-        <button class="btn sm" id="pullBtn2" type="button">تحديث من الشيت</button>
         <a class="btn sm" id="openSheet" target="_blank" rel="noopener" hidden>فتح الشيت</a>
       </div>
     </div>
   </section>
 
-  <!-- ============ الإعدادات ============ -->
-  <section class="view" id="view-set" hidden>
-
-    <div class="card set-sec" id="sec-sync">
-      <div class="card-h"><h2>الربط مع Google Sheets</h2><a class="btn sm" id="openSheet2" target="_blank" rel="noopener" hidden>فتح الشيت</a></div>
-      <div class="status-box" id="syncStatus">غير مربوط — الملاحظات تُحفظ على هذا الجهاز فقط.</div>
-      <div class="set-row">
-        <label for="urlInput">رابط Web App (من Apps Script — آخره ‎/exec)</label>
-        <input class="field ltr" id="urlInput" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">
-      </div>
-      <div class="row">
-        <button class="btn primary" id="urlSave" type="button">حفظ وربط</button>
-        <button class="btn" id="urlTest" type="button">اختبار الاتصال</button>
-        <button class="btn" id="syncBtn" type="button">مزامنة الآن</button>
-      </div>
-      <div class="row">
-        <button class="btn sm" id="pullBtn" type="button">سحب آخر 60 يوم من الشيت</button>
-        <button class="btn sm" id="pullAllBtn" type="button">سحب السجل كامل</button>
-        <button class="btn sm" id="copySetup" type="button">رابط تجهيز لجهاز ثاني</button>
-        <span class="hint" id="pendingInfo"></span>
-      </div>
-      <button class="toggle" id="optPhoto" type="button" aria-pressed="true"><span class="box">✓</span>رفع الصور المرفقة إلى Google Drive وربطها بالسجل</button>
-      <details class="more" id="howto">
-        <summary>طريقة الربط (مرة وحدة · 3 دقائق)</summary>
-        <div>
-          <ol class="steps">
-            <li>افتح <a class="sheet-link" href="#" target="_blank" rel="noopener">الشيت حقك</a> من الكمبيوتر ← من القائمة <code>Extensions</code> ← <code>Apps Script</code>.</li>
-            <li>احذف الكود الموجود والصق الكود الجديد (زر «نسخ الكود» تحت) ← اضغط حفظ 💾.</li>
-            <li>من فوق اختر الدالة <code>setup</code> واضغط <code>Run</code> ← وافق على الصلاحيات (Sheets + Drive).</li>
-            <li><b>أول مرة:</b> <code>Deploy</code> ← <code>New deployment</code> ← النوع <code>Web app</code> ← Execute as: <code>Me</code> ← Who has access: <code>Anyone</code> ← <code>Deploy</code> وانسخ الرابط.</li>
-            <li><b>عندك ربط قديم (شيتك فيه تبويب Villas)؟</b> <code>Deploy</code> ← <code>Manage deployments</code> ← ✎ <code>Edit</code> ← Version: <code>New version</code> ← <code>Deploy</code>. الرابط يبقى نفسه، وتلقاه في نفس الشاشة باسم <code>Web app URL</code>.</li>
-            <li>الصق الرابط فوق واضغط «حفظ وربط». بتنضاف تبويبات Observations و Summary و Custom Templates، وبيانات Villas القديمة ما تنمس.</li>
-          </ol>
-          <div class="row"><button class="btn sm primary" id="copyGas" type="button">نسخ كود Apps Script</button></div>
-          <details class="more"><summary>عرض الكود</summary><div><pre class="preview" id="gasPreview"></pre></div></details>
-        </div>
-      </details>
-    </div>
-
-    <div class="card set-sec">
-      <div class="card-h"><h2>صياغة الملاحظة</h2></div>
-      <div class="set-row">
-        <label for="nameInput">اسمك (يظهر في الملخصات)</label>
-        <input class="field ltr" id="nameInput" type="text" autocomplete="name" placeholder="Omar Alqarni">
-      </div>
-      <div class="set-row"><label>لغة النص المنسوخ</label>
-        <div class="seg" id="langSeg"><button type="button" data-v="en">English فقط</button><button type="button" data-v="aren">عربي + English</button></div>
-      </div>
-      <div class="set-row"><label>أسلوب الصياغة</label>
-        <div class="seg" id="styleSeg"><button type="button" data-v="full">كاملة (ملاحظة + خطر + إجراء)</button><button type="button" data-v="short">مختصرة</button></div>
-      </div>
-      <div class="row">
-        <button class="toggle" id="optLoc" type="button" aria-pressed="true"><span class="box">✓</span>إضافة سطر الموقع (218/5B)</button>
-        <button class="toggle" id="optRef" type="button" aria-pressed="false"><span class="box">✓</span>إضافة الرقم المرجعي</button>
-      </div>
-      <div class="set-row"><label>المظهر</label>
-        <div class="seg" id="themeSeg"><button type="button" data-v="auto">حسب الجهاز</button><button type="button" data-v="dark">ليلي</button><button type="button" data-v="light">نهاري (للشمس)</button></div>
-      </div>
-    </div>
-
-    <div class="card set-sec">
-      <div class="card-h"><h2>قوالبي الخاصة</h2></div>
-      <div class="hint">أضف ملاحظة تتكرر عندك وما لقيتها بالقائمة. تقدر كمان تعدّل أي قالب أساسي من زر ✎ داخل المسودة.</div>
-      <div class="set-row"><label for="tplCat">التصنيف</label><select class="field" id="tplCat"></select></div>
-      <div class="set-row"><label for="tplAr">الوصف بالعربي</label><input class="field" id="tplAr" type="text" placeholder="مثال: سلم خشبي مصنوع محليًا"></div>
-      <div class="set-row"><label for="tplNp">الوصف بالإنجليزي (يجي بعد كلمة Observed)</label><input class="field ltr" id="tplNp" type="text" placeholder="a locally made wooden ladder in use"></div>
-      <div class="set-row"><label for="tplAct">الإجراء التصحيحي (English)</label><input class="field ltr" id="tplAct" type="text" placeholder="Remove it from site and provide an approved ladder."></div>
-      <div class="set-row"><label>الخطورة</label>
-        <div class="seg risk" id="tplRisk"><button type="button" data-v="H" aria-pressed="false">عالية</button><button type="button" data-v="M" aria-pressed="true">متوسطة</button><button type="button" data-v="L" aria-pressed="false">منخفضة</button></div>
-      </div>
-      <div class="set-row"><label>نوع الخطر</label><div class="chips" id="tplHz"></div></div>
-      <div class="row"><button class="btn primary" id="tplAdd" type="button">إضافة القالب</button></div>
-      <details class="more"><summary>القوالب المضافة</summary><div id="customList"></div></details>
-      <details class="more"><summary>قوالب أساسية عدّلتها</summary><div id="overList"></div></details>
-    </div>
-
-    <div class="card set-sec">
-      <div class="card-h"><h2>البيانات</h2></div>
-      <div class="row">
-        <button class="btn sm" id="exportBtn" type="button">تصدير نسخة احتياطية</button>
-        <button class="btn sm" id="importBtn" type="button">استيراد نسخة</button>
-        <button class="btn sm danger" id="wipeBtn" type="button">مسح بيانات الجهاز</button>
-      </div>
-      <div class="hint" id="verInfo"></div>
-    </div>
-  </section>
 </main>
 
 <!-- ============ المسودة ============ -->
@@ -580,7 +483,7 @@ body.no-dock .toast{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
     </div>
     <div class="dock-body" id="dockBody" hidden>
       <div class="out">
-        <div class="out-label"><span>النص اللي بينسخ (تقدر تعدّله)</span><button class="btn sm ghost" id="regenBtn" type="button" hidden>↺ إعادة الصياغة</button></div>
+        <div class="out-label"><span>النص اللي بينسخ (تقدر تعدّله)</span><span class="row" style="gap:6px"><button class="btn sm ghost" id="saveTplBtn" type="button" hidden>+ احفظها بالقائمة</button><button class="btn sm ghost" id="regenBtn" type="button" hidden>↺ إعادة الصياغة</button></span></div>
         <textarea class="field" id="outText" rows="7" placeholder="Pick templates above, or type your own observation here…"></textarea>
         <div class="hint" id="locPreview" style="margin-top:6px"></div>
       </div>
@@ -614,416 +517,7 @@ body.no-dock .toast{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <div class="modal" id="modal" hidden><div class="modal-in" id="modalIn"></div></div>
 <input type="file" id="photoInput" accept="image/*" multiple hidden>
-<input type="file" id="importInput" accept="application/json,.json" hidden>
 
-<script type="text/plain" id="gasCode">
-/**
- * دفتر ملاحظات HSE — SEDRA · Google Sheets backend (v3)
- * ------------------------------------------------------------------
- * 1) افتح الشيت ← Extensions ← Apps Script ← احذف الكود القديم والصق هذا الكود ← Save
- * 2) اختر الدالة setup من الأعلى واضغط Run مرة وحدة ← وافق على الصلاحيات (Sheets + Drive)
- * 3) عندك نشر قديم؟  Deploy ← Manage deployments ← ✎ Edit ← Version: New version ← Deploy  (الرابط يبقى نفسه)
- *    أول مرة؟        Deploy ← New deployment ← Web app ← Execute as: Me ← Who has access: Anyone ← Deploy
- * الكود يضيف تبويبات: Observations · Custom Templates · Summary — ولا يلمس تبويبات Villas / Templates القديمة.
- */
-var SHEET_ID = '1GVG6mwqdIGwz3Friq5JOcIc94LC7kMtJ02wIWjZ2JZE';
-var APP = 'sedra-hse';
-var VERSION = 3;
-var OBS_TAB = 'Observations';
-var TPL_TAB = 'Custom Templates';
-var SUM_TAB = 'Summary';
-var PHOTO_FOLDER = 'SEDRA HSE Photos';
-
-var OBS_COLS = [
-  ['id', 'Ref'], ['date', 'Date'], ['time', 'Time'], ['phase', 'Phase'], ['area', 'Area'], ['loc', 'Location'],
-  ['category', 'Category'], ['risk', 'Risk'], ['text', 'Observation'], ['ar', 'Arabic summary'],
-  ['status', 'Status'], ['closedAt', 'Closed on'], ['closeNote', 'Close-out note'], ['repeated', 'Repeated'],
-  ['photos', 'Photos'], ['preview', 'Preview'], ['gps', 'GPS'], ['items', 'Template IDs'],
-  ['device', 'Device'], ['createdAt', 'Created'], ['updatedAt', 'Updated']
-];
-var TPL_COLS = [['id', 'ID'], ['cat', 'Category'], ['risk', 'Risk'], ['ar', 'Arabic'], ['np', 'English'],
-  ['act', 'Action'], ['hz', 'Hazards'], ['updatedAt', 'Updated'], ['deleted', 'Deleted']];
-var RISK_NAME = {H: 'High', M: 'Medium', L: 'Low', G: 'Good practice'};
-var RISK_CODE = {'High': 'H', 'Medium': 'M', 'Low': 'L', 'Good practice': 'G'};
-
-/* ---------------- entry points ---------------- */
-function doGet(e) {
-  var p = (e && e.parameter) || {};
-  try {
-    var ss = ss_();
-    ensure_(ss);
-    var base = {ok: true, app: APP, version: VERSION, sheetName: ss.getName(), sheetUrl: ss.getUrl()};
-    if (p.action === 'list') {
-      base.observations = listObs_(ss, p.since || '', Number(p.limit) || 1500);
-      base.templates = listTpl_(ss);
-    } else {
-      base.time = new Date().toISOString();
-    }
-    return out_(base);
-  } catch (err) {
-    return out_({ok: false, app: APP, error: msg_(err)});
-  }
-}
-
-function doPost(e) {
-  var lock = LockService.getScriptLock();
-  try { lock.waitLock(30000); } catch (x) { return out_({ok: false, app: APP, error: 'Sheet busy, retrying'}); }
-  try {
-    var body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-    if (!body.ops) return out_({ok: false, app: APP, legacy: true, error: 'Old page version. Please update the HSE page.'});
-    var ss = ss_();
-    var sh = ensure_(ss);
-    var results = body.ops.map(function (op) {
-      try {
-        if (op.op === 'upsertObs') return upsertObs_(sh, op.obs);
-        if (op.op === 'deleteObs') return deleteObs_(sh, op.id);
-        if (op.op === 'photo') return photo_(sh, op);
-        if (op.op === 'upsertTpl') return upsertTpl_(ss, op.tpl);
-        return {ok: false, error: 'Unknown operation'};
-      } catch (err) {
-        return {ok: false, error: msg_(err)};
-      }
-    });
-    try { refreshSummary_(ss); } catch (x) {}
-    return out_({ok: true, app: APP, version: VERSION, results: results});
-  } catch (err) {
-    return out_({ok: false, app: APP, error: msg_(err)});
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-/** شغّلها مرة وحدة من المحرر لتجهيز التبويبات وأخذ الصلاحيات */
-function setup() {
-  var ss = ss_();
-  ensure_(ss);
-  folder_();
-  refreshSummary_(ss);
-  Logger.log('Ready: ' + ss.getUrl());
-  return 'Ready';
-}
-
-function onOpen() {
-  try {
-    SpreadsheetApp.getUi().createMenu('HSE')
-      .addItem('تحديث الملخص', 'refreshSummary')
-      .addItem('تجهيز / إصلاح التبويبات', 'setup')
-      .addToUi();
-  } catch (x) {}
-}
-
-function refreshSummary() { refreshSummary_(ss_()); }
-
-/** أي تعديل يدوي في تبويب Observations يحدّث وقت التعديل عشان ينتقل للجوال */
-function onEdit(e) {
-  try {
-    var sh = e.range.getSheet();
-    if (sh.getName() !== OBS_TAB) return;
-    var r0 = Math.max(2, e.range.getRow());
-    var r1 = e.range.getRow() + e.range.getNumRows() - 1;
-    if (r1 < 2) return;
-    var rows = r1 - r0 + 1;
-    var updCol = col_(OBS_COLS, 'updatedAt') + 1;
-    if (e.range.getColumn() === updCol && e.range.getNumColumns() === 1) return;
-    var now = new Date().toISOString();
-    var upd = [];
-    for (var i = 0; i < rows; i++) upd.push([now]);
-    sh.getRange(r0, updCol, rows, 1).setNumberFormat('@').setValues(upd);
-    var stCol = col_(OBS_COLS, 'status') + 1, clCol = col_(OBS_COLS, 'closedAt') + 1;
-    if (e.range.getColumn() <= stCol && e.range.getLastColumn() >= stCol) {
-      var tz = sh.getParent().getSpreadsheetTimeZone();
-      var st = sh.getRange(r0, stCol, rows, 1).getValues();
-      var cl = sh.getRange(r0, clCol, rows, 1).getValues();
-      for (var j = 0; j < rows; j++) {
-        if (String(st[j][0]) === 'Closed' && !cl[j][0]) cl[j][0] = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm');
-        if (String(st[j][0]) === 'Open') cl[j][0] = '';
-      }
-      sh.getRange(r0, clCol, rows, 1).setNumberFormat('@').setValues(cl);
-    }
-  } catch (x) {}
-}
-
-/* ---------------- sheets ---------------- */
-function ss_() {
-  try {
-    var a = SpreadsheetApp.getActiveSpreadsheet();
-    if (a) return a;
-  } catch (x) {}
-  return SpreadsheetApp.openById(SHEET_ID);
-}
-
-function ensure_(ss) {
-  var sh = ss.getSheetByName(OBS_TAB);
-  if (!sh) {
-    sh = ss.insertSheet(OBS_TAB, 0);
-    var n = OBS_COLS.length;
-    sh.getRange(1, 1, 1, n).setValues([OBS_COLS.map(function (c) { return c[1]; })])
-      .setFontWeight('bold').setBackground('#1b1d20').setFontColor('#ffffff').setVerticalAlignment('middle');
-    sh.setFrozenRows(1);
-    sh.setRowHeight(1, 30);
-    var widths = {id: 150, date: 92, time: 56, phase: 56, area: 56, loc: 90, category: 190, risk: 84, text: 440, ar: 300,
-      status: 80, closedAt: 128, closeNote: 220, repeated: 74, photos: 210, preview: 130, gps: 190, items: 120,
-      device: 80, createdAt: 160, updatedAt: 160};
-    Object.keys(widths).forEach(function (k) { sh.setColumnWidth(col_(OBS_COLS, k) + 1, widths[k]); });
-    var max = sh.getMaxRows();
-    sh.getRange(2, 1, max - 1, n).setVerticalAlignment('top');
-    sh.getRange(2, col_(OBS_COLS, 'text') + 1, max - 1, 2).setWrap(true);
-    sh.getRange(2, col_(OBS_COLS, 'closeNote') + 1, max - 1, 1).setWrap(true);
-    var stRange = sh.getRange(2, col_(OBS_COLS, 'status') + 1, max - 1, 1);
-    stRange.setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(['Open', 'Closed'], true).setAllowInvalid(true).build());
-    var rkRange = sh.getRange(2, col_(OBS_COLS, 'risk') + 1, max - 1, 1);
-    var rule = function (txt, bg, fg, rng) {
-      return SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo(txt).setBackground(bg).setFontColor(fg).setRanges([rng]).build();
-    };
-    sh.setConditionalFormatRules([
-      rule('High', '#f8d7d4', '#b3261e', rkRange), rule('Medium', '#fde5cc', '#9a4f00', rkRange),
-      rule('Low', '#d6e7f8', '#1d5fa3', rkRange), rule('Good practice', '#d4f0e1', '#1b7a4b', rkRange),
-      rule('Open', '#fff2bf', '#5c4a00', stRange), rule('Closed', '#d4f0e1', '#1b7a4b', stRange)
-    ]);
-  }
-  var t = ss.getSheetByName(TPL_TAB);
-  if (!t) {
-    t = ss.insertSheet(TPL_TAB);
-    t.getRange(1, 1, 1, TPL_COLS.length).setValues([TPL_COLS.map(function (c) { return c[1]; })])
-      .setFontWeight('bold').setBackground('#1b1d20').setFontColor('#ffffff');
-    t.setFrozenRows(1);
-    t.getRange(1, 1, t.getMaxRows(), TPL_COLS.length).setNumberFormat('@');
-    t.setColumnWidth(4, 240); t.setColumnWidth(5, 340); t.setColumnWidth(6, 340);
-  }
-  if (!ss.getSheetByName(SUM_TAB)) ss.insertSheet(SUM_TAB, 1);
-  return sh;
-}
-
-function col_(cols, key) {
-  for (var i = 0; i < cols.length; i++) if (cols[i][0] === key) return i;
-  return -1;
-}
-
-function findRow_(sh, id) {
-  var last = sh.getLastRow();
-  if (!id || last < 2) return 0;
-  var hit = sh.getRange(2, 1, last - 1, 1).createTextFinder(String(id)).matchEntireCell(true).findNext();
-  return hit ? hit.getRow() : 0;
-}
-
-function ensureRows_(sh, row) {
-  var max = sh.getMaxRows();
-  if (row > max) sh.insertRowsAfter(max, Math.max(200, row - max));
-}
-
-function mergeLinks_(cur, add) {
-  var list = String(cur || '').split(/\s+/).filter(function (x) { return x; });
-  (add || []).forEach(function (u) { if (u && list.indexOf(u) < 0) list.push(u); });
-  return list.join('\n');
-}
-
-/* ---------------- observations ---------------- */
-function upsertObs_(sh, o) {
-  if (!o || !o.id) return {ok: false, error: 'Missing observation id'};
-  var n = OBS_COLS.length;
-  var row = findRow_(sh, o.id);
-  var cur = row ? sh.getRange(row, 1, 1, n).getValues()[0] : null;
-  if (cur) {
-    var curUpd = String(cur[col_(OBS_COLS, 'updatedAt')] || '');
-    if (curUpd && o.updatedAt && curUpd > String(o.updatedAt)) return {ok: true, id: o.id, skipped: 'newer-in-sheet'};
-  } else {
-    row = sh.getLastRow() + 1;
-    ensureRows_(sh, row);
-  }
-  var v = {
-    id: o.id, date: o.date || '', time: o.time || '', phase: o.phase || '', area: o.area || '', loc: o.loc || '',
-    category: o.catNames || '', risk: RISK_NAME[o.risk] || o.risk || '', text: o.text || '', ar: o.ar || '',
-    status: o.status === 'closed' ? 'Closed' : 'Open', closedAt: o.closedAt || '', closeNote: o.closeNote || '',
-    repeated: o.repeated ? 'Yes' : '', photos: mergeLinks_(cur ? cur[col_(OBS_COLS, 'photos')] : '', o.photoUrls),
-    gps: o.gps ? 'https://maps.google.com/?q=' + o.gps : '', items: (o.items || []).join(','),
-    device: o.device || '', createdAt: o.createdAt || '', updatedAt: o.updatedAt || new Date().toISOString()
-  };
-  var pv = col_(OBS_COLS, 'preview');
-  var left = OBS_COLS.slice(0, pv).map(function (c) { return v[c[0]]; });
-  var right = OBS_COLS.slice(pv + 1).map(function (c) { return v[c[0]]; });
-  // نص صريح (@) عشان الشيت ما يحوّل التاريخ/الوقت/رقم المرحلة تلقائيًا
-  sh.getRange(row, 1, 1, left.length).setNumberFormat('@').setValues([left]);
-  sh.getRange(row, pv + 2, 1, right.length).setNumberFormat('@').setValues([right]);
-  return {ok: true, id: o.id, row: row};
-}
-
-function deleteObs_(sh, id) {
-  var row = findRow_(sh, id);
-  if (row) sh.deleteRow(row);
-  return {ok: true, id: id, deleted: !!row};
-}
-
-function photo_(sh, op) {
-  if (!op || !op.id || !op.data) return {ok: false, error: 'Empty photo'};
-  var folder = folder_();
-  var name = op.name || (op.id + '_' + (op.idx || 1) + '.jpg');
-  var file;
-  var it = folder.getFilesByName(name);
-  if (it.hasNext()) {
-    file = it.next();
-  } else {
-    file = folder.createFile(Utilities.newBlob(Utilities.base64Decode(op.data), op.mime || 'image/jpeg', name));
-    try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (x) {}
-  }
-  var url = 'https://drive.google.com/file/d/' + file.getId() + '/view';
-  var row = findRow_(sh, op.id);
-  if (row) {
-    var pc = col_(OBS_COLS, 'photos') + 1;
-    sh.getRange(row, pc).setValue(mergeLinks_(sh.getRange(row, pc).getValue(), [url]));
-    var prev = sh.getRange(row, col_(OBS_COLS, 'preview') + 1);
-    if (!prev.getFormula()) {
-      prev.setFormula('=IMAGE("https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w400")');
-      sh.setRowHeight(row, 96);
-    }
-  }
-  return {ok: true, id: op.id, url: url};
-}
-
-function folder_() {
-  var props = PropertiesService.getScriptProperties();
-  var id = props.getProperty('PHOTO_FOLDER_ID');
-  if (id) {
-    try { return DriveApp.getFolderById(id); } catch (x) {}
-  }
-  var it = DriveApp.getFoldersByName(PHOTO_FOLDER);
-  var f = it.hasNext() ? it.next() : DriveApp.createFolder(PHOTO_FOLDER);
-  props.setProperty('PHOTO_FOLDER_ID', f.getId());
-  return f;
-}
-
-function listObs_(ss, since, limit) {
-  var sh = ss.getSheetByName(OBS_TAB);
-  var last = sh.getLastRow();
-  if (last < 2) return [];
-  var vals = sh.getRange(2, 1, last - 1, OBS_COLS.length).getValues();
-  var tz = ss.getSpreadsheetTimeZone();
-  var out = [];
-  for (var i = vals.length - 1; i >= 0 && out.length < limit; i--) {
-    var r = vals[i], o = {};
-    for (var c = 0; c < OBS_COLS.length; c++) {
-      var val = r[c];
-      if (val instanceof Date) val = Utilities.formatDate(val, tz, OBS_COLS[c][0] === 'time' ? 'HH:mm' : 'yyyy-MM-dd');
-      o[OBS_COLS[c][0]] = val === null || val === undefined ? '' : String(val);
-    }
-    if (!o.id) continue;
-    if (since && o.date < since) continue;
-    out.push({
-      id: o.id, date: o.date, time: o.time, phase: o.phase, area: o.area, loc: o.loc,
-      category: o.category, risk: RISK_CODE[o.risk] || 'M', text: o.text, ar: o.ar,
-      status: o.status.toLowerCase() === 'closed' ? 'closed' : 'open', closedAt: o.closedAt, closeNote: o.closeNote,
-      repeated: o.repeated.toLowerCase() === 'yes',
-      photoUrls: o.photos.split(/\s+/).filter(function (x) { return x; }),
-      gps: o.gps.replace('https://maps.google.com/?q=', ''),
-      items: o.items.split(',').filter(function (x) { return x; }),
-      device: o.device, createdAt: o.createdAt, updatedAt: o.updatedAt
-    });
-  }
-  return out;
-}
-
-/* ---------------- templates ---------------- */
-function upsertTpl_(ss, t) {
-  if (!t || !t.id) return {ok: false, error: 'Missing template id'};
-  var sh = ss.getSheetByName(TPL_TAB);
-  var n = TPL_COLS.length;
-  var row = findRow_(sh, t.id);
-  if (row) {
-    var cur = sh.getRange(row, 1, 1, n).getValues()[0];
-    if (String(cur[7] || '') > String(t.updatedAt || '')) return {ok: true, id: t.id, skipped: 'newer-in-sheet'};
-  } else {
-    row = sh.getLastRow() + 1;
-    ensureRows_(sh, row);
-  }
-  sh.getRange(row, 1, 1, n).setNumberFormat('@').setValues([[
-    t.id, t.cat || '', t.risk || '', t.ar || '', t.np || '', t.act || '', t.hz || '',
-    t.updatedAt || new Date().toISOString(), t.deleted ? 'Yes' : ''
-  ]]);
-  return {ok: true, id: t.id};
-}
-
-function listTpl_(ss) {
-  var sh = ss.getSheetByName(TPL_TAB);
-  var last = sh.getLastRow();
-  if (last < 2) return [];
-  return sh.getRange(2, 1, last - 1, TPL_COLS.length).getValues().map(function (r) {
-    return {id: String(r[0]), cat: String(r[1]), risk: String(r[2]), ar: String(r[3]), np: String(r[4]), act: String(r[5]),
-      hz: String(r[6]), updatedAt: String(r[7]), deleted: String(r[8]).toLowerCase() === 'yes'};
-  }).filter(function (t) { return t.id; });
-}
-
-/* ---------------- summary tab ---------------- */
-function refreshSummary_(ss) {
-  var sh = ss.getSheetByName(OBS_TAB);
-  var sum = ss.getSheetByName(SUM_TAB) || ss.insertSheet(SUM_TAB);
-  var tz = ss.getSpreadsheetTimeZone();
-  var today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
-  var last = sh.getLastRow();
-  var vals = last > 1 ? sh.getRange(2, 1, last - 1, OBS_COLS.length).getValues() : [];
-  var iD = col_(OBS_COLS, 'date'), iA = col_(OBS_COLS, 'area'), iC = col_(OBS_COLS, 'category'),
-      iR = col_(OBS_COLS, 'risk'), iS = col_(OBS_COLS, 'status');
-  var all = {n: 0, open: 0, H: 0}, tod = {n: 0, open: 0, H: 0}, cats = {}, areas = {}, days = {};
-  vals.forEach(function (r) {
-    if (!r[0]) return;
-    var d = r[iD] instanceof Date ? Utilities.formatDate(r[iD], tz, 'yyyy-MM-dd') : String(r[iD]);
-    var open = String(r[iS]) !== 'Closed', high = String(r[iR]) === 'High';
-    all.n++; if (open) all.open++; if (high) all.H++;
-    if (d === today) { tod.n++; if (open) tod.open++; if (high) tod.H++; }
-    String(r[iC] || 'Other').split(' / ').forEach(function (c) { bump_(cats, c || 'Other', open); });
-    bump_(areas, String(r[iA] || '—'), open);
-    bump_(days, d, open);
-  });
-  var rate = function (o) { return o.n ? Math.round((o.n - o.open) / o.n * 100) + '%' : '—'; };
-  var out = [
-    ['SEDRA HSE — Observation Register', '', ''],
-    ['Updated ' + Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm'), '', ''],
-    ['', '', ''],
-    ['Metric', 'All time', 'Today'],
-    ['Total observations', all.n, tod.n],
-    ['Open', all.open, tod.open],
-    ['Closed', all.n - all.open, tod.n - tod.open],
-    ['Close-out rate', rate(all), rate(tod)],
-    ['High risk', all.H, tod.H],
-    ['', '', ''],
-    ['Category', 'Total', 'Open']
-  ];
-  sorted_(cats).forEach(function (k) { out.push([k, cats[k].n, cats[k].open]); });
-  out.push(['', '', ''], ['Area', 'Total', 'Open']);
-  sorted_(areas).forEach(function (k) { out.push([k, areas[k].n, areas[k].open]); });
-  out.push(['', '', ''], ['Date (last 14 days)', 'Total', 'Open']);
-  Object.keys(days).sort().reverse().slice(0, 14).forEach(function (k) { out.push([k, days[k].n, days[k].open]); });
-  sum.clear();
-  sum.getRange(1, 1, out.length, 3).setValues(out);
-  sum.getRange(1, 1).setFontSize(14).setFontWeight('bold');
-  sum.getRange(2, 1).setFontColor('#666666');
-  out.forEach(function (r, i) {
-    if (r[0] === 'Metric' || r[0] === 'Category' || r[0] === 'Area' || r[0] === 'Date (last 14 days)') {
-      sum.getRange(i + 1, 1, 1, 3).setFontWeight('bold').setBackground('#1b1d20').setFontColor('#ffffff');
-    }
-  });
-  sum.setColumnWidth(1, 300);
-  sum.getRange(1, 2, out.length, 2).setHorizontalAlignment('center');
-}
-
-function bump_(m, k, open) {
-  if (!m[k]) m[k] = {n: 0, open: 0};
-  m[k].n++;
-  if (open) m[k].open++;
-}
-
-function sorted_(m) {
-  return Object.keys(m).sort(function (a, b) { return m[b].n - m[a].n; });
-}
-
-/* ---------------- helpers ---------------- */
-function out_(o) {
-  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
-}
-
-function msg_(err) {
-  return String((err && err.message) || err);
-}
-
-</script>
 <script>
 /* ============================================================
    مكتبة الملاحظات — مبنية من ملاحظات مجموعتي SEDRA HSE Phase 3 و Phase 5
@@ -1066,49 +560,61 @@ const HZ = {
 };
 
 const CATS = [
-  {k:"open", code:"OPN", ar:"الفتحات والشبابيك والحواف", en:"Openings, Windows & Edges",
+  {k:"open", code:"OPN", hz:"fall", ar:"الفتحات والشبابيك والحواف", en:"Openings, Windows & Edges",
    actAr:"يجب تركيب حماية صلبة لجميع الفتحات والحواف ومنع الاقتراب منها."},
-  {k:"hk", code:"HK", ar:"النظافة العامة والمخلفات", en:"Housekeeping & Waste",
+  {k:"hk", code:"HK", hz:"trip fire", ar:"النظافة العامة والمخلفات", en:"Housekeeping & Waste",
    actAr:"يجب تنظيف الموقع وإزالة المخلفات وترتيب المواد وإبقاء الممرات خالية."},
-  {k:"exc", code:"EXC", ar:"الحفريات والخنادق والمناهيل", en:"Excavations, Trenches & Manholes",
+  {k:"exc", code:"EXC", hz:"fall", ar:"الحفريات والخنادق والمناهيل", en:"Excavations, Trenches & Manholes",
    actAr:"يجب تسييج الحفريات بحواجز صلبة ولوحات تحذيرية وتوفير مدخل ومخرج آمن."},
-  {k:"ppe", code:"PPE", ar:"معدات الحماية الشخصية", en:"PPE",
+  {k:"ppe", code:"PPE", hz:"injury", ar:"معدات الحماية الشخصية", en:"PPE",
    actAr:"يجب توفير معدات الحماية الكاملة وإلزام العمال بارتدائها طوال الوقت."},
-  {k:"wah", code:"WAH", ar:"العمل على ارتفاع والسلالم والمنصات", en:"Working at Height & Ladders",
+  {k:"wah", code:"WAH", hz:"fall", ar:"العمل على ارتفاع والسلالم والمنصات", en:"Working at Height & Ladders",
    actAr:"يجب إيقاف العمل على الارتفاع حتى توفير الحماية من السقوط ووسائل الوصول المعتمدة."},
-  {k:"gen", code:"GEN", ar:"المولدات", en:"Generators",
+  {k:"gen", code:"GEN", hz:"fire elec", ar:"المولدات", en:"Generators",
    actAr:"يجب تأمين المولد: صينية تسريب، طفاية، عزل (LOTO)، باب مغلق، بطاقة فحص ومكان مخصص."},
-  {k:"elec", code:"ELE", ar:"الكهرباء واللوحات والكيابل", en:"Electrical, DBs & Cables",
+  {k:"elec", code:"ELE", hz:"elec", ar:"الكهرباء واللوحات والكيابل", en:"Electrical, DBs & Cables",
    actAr:"يجب عزل مصدر الخطر الكهربائي وإصلاحه بواسطة كهربائي مؤهل وتنظيم الكيابل."},
-  {k:"store", code:"MAT", ar:"تخزين المواد وترتيبها", en:"Material Storage & Stacking",
+  {k:"store", code:"MAT", hz:"fo trip", ar:"تخزين المواد وترتيبها", en:"Material Storage & Stacking",
    actAr:"يجب ترتيب المواد وتخزينها في الأماكن المخصصة بشكل مستقر بعيدًا عن الممرات والحواف."},
-  {k:"veh", code:"VEH", ar:"المركبات والمرور والمواقف", en:"Vehicles, Traffic & Parking",
+  {k:"veh", code:"VEH", hz:"coll", ar:"المركبات والمرور والمواقف", en:"Vehicles, Traffic & Parking",
    actAr:"يجب الالتزام بأنظمة المرور في الموقع والوقوف في المواقف المخصصة فقط."},
-  {k:"lift", code:"LFT", ar:"عمليات الرفع والرافعات", en:"Lifting Operations & Cranes",
+  {k:"lift", code:"LFT", hz:"struck", ar:"عمليات الرفع والرافعات", en:"Lifting Operations & Cranes",
    actAr:"يجب إيقاف الرفع حتى توفر خطة الرفع والتصريح ومشرف رفع مؤهل وتسييج المنطقة."},
-  {k:"mewp", code:"MEWP", ar:"المان لفت والمعدات المتحركة", en:"MEWPs & Mobile Plant",
+  {k:"pre", code:"PRE", hz:"struck crush", ar:"المسبق الصب: التركيب والتخزين", en:"Precast Erection & Storage",
+   actAr:"يجب تطبيق طريقة التركيب المعتمدة: منطقة استبعاد، مشرف رفع، دعامات مؤقتة وحماية من السقوط."},
+  {k:"mewp", code:"MEWP", hz:"struck coll", ar:"المان لفت والمعدات المتحركة", en:"MEWPs & Mobile Plant",
    actAr:"يجب تأمين المعدة بالحواجز والمراقب ومشغل مؤهل ووثائق سارية."},
-  {k:"scaf", code:"SCF", ar:"السقالات", en:"Scaffolding",
+  {k:"scaf", code:"SCF", hz:"fall collapse", ar:"السقالات", en:"Scaffolding",
    actAr:"يجب إيقاف استخدام السقالة حتى فحصها واعتمادها من شخص مختص وتعليق البطاقة الخضراء."},
-  {k:"fire", code:"FIRE", ar:"الحريق والأعمال الساخنة", en:"Fire & Hot Work",
+  {k:"conc", code:"CON", hz:"collapse", ar:"الخرسانة والشدات والدعامات", en:"Concrete, Formwork & Shoring",
+   actAr:"يجب الالتزام بتصميم الشدات والدعامات وتسييج منطقة الصب وتوفير معدات الحماية."},
+  {k:"fire", code:"FIRE", hz:"fire", ar:"الحريق والأعمال الساخنة", en:"Fire & Hot Work",
    actAr:"يجب توفير وسائل مكافحة الحريق وتصريح العمل الساخن ومراقب الحريق وإزالة المواد القابلة للاشتعال."},
-  {k:"coshh", code:"COSHH", ar:"المواد الكيميائية والوقود", en:"Chemicals (COSHH) & Fuel",
+  {k:"coshh", code:"COSHH", hz:"chem fire", ar:"المواد الكيميائية والوقود", en:"Chemicals (COSHH) & Fuel",
    actAr:"يجب تخزين المواد الكيميائية في مكان مخصص مظلل ومهوّى مع SDS وأدوات احتواء الانسكاب."},
-  {k:"env", code:"ENV", ar:"البيئة والانسكابات والغبار", en:"Environment",
+  {k:"env", code:"ENV", hz:"env", ar:"البيئة والانسكابات والغبار", en:"Environment",
    actAr:"يجب احتواء الانسكابات وتنظيفها والتخلص من المخلفات بالطرق المعتمدة ومنع التلوث."},
-  {k:"tools", code:"TLS", ar:"العدد والأدوات", en:"Hand & Power Tools",
+  {k:"fin", code:"FIN", hz:"resp chem", ar:"أعمال التشطيب (دهان، بلاط، عزل)", en:"Finishing Works",
+   actAr:"يجب توفير منصات عمل معتمدة ومعدات حماية مناسبة للمواد وتهوية كافية."},
+  {k:"tools", code:"TLS", hz:"injury", ar:"العدد والأدوات", en:"Hand & Power Tools",
    actAr:"يجب سحب الأداة التالفة أو غير المفحوصة من الاستخدام واستبدالها بأداة سليمة ومفحوصة."},
-  {k:"ptw", code:"PTW", ar:"التصاريح والوثائق والكفاءة", en:"Permits, Documents & Competency",
+  {k:"ptw", code:"PTW", hz:"", ar:"التصاريح والوثائق والكفاءة", en:"Permits, Documents & Competency",
    actAr:"يجب إيقاف النشاط حتى توفر التصريح الساري والوثائق والشهادات المطلوبة في موقع العمل."},
-  {k:"wel", code:"WEL", ar:"الرعاية والإجهاد الحراري", en:"Welfare & Heat Stress",
+  {k:"wel", code:"WEL", hz:"heat health", ar:"الرعاية والإجهاد الحراري", en:"Welfare & Heat Stress",
    actAr:"يجب توفير مياه شرب باردة ومظلات استراحة ودورات مياه نظيفة وتطبيق أوقات الراحة."},
-  {k:"acts", code:"ACT", ar:"السلوكيات غير الآمنة", en:"Unsafe Acts & Behaviour",
+  {k:"acts", code:"ACT", hz:"injury", ar:"السلوكيات غير الآمنة", en:"Unsafe Acts & Behaviour",
    actAr:"يجب إيقاف الممارسة غير الآمنة فورًا وتوعية العامل واتخاذ الإجراء التأديبي عند التكرار."},
-  {k:"cond", code:"UC", ar:"حالات غير آمنة عامة", en:"General Unsafe Conditions",
+  {k:"cond", code:"UC", hz:"injury", ar:"حالات غير آمنة عامة", en:"General Unsafe Conditions",
    actAr:"يجب تصحيح الحالة غير الآمنة فورًا ومنع الوصول للمنطقة حتى معالجتها."},
-  {k:"conf", code:"CSE", ar:"الأماكن المغلقة والمناهيل", en:"Confined Spaces",
+  {k:"emg", code:"EMG", hz:"", ar:"اللوحات والطوارئ وتنظيم الموقع", en:"Signage, Emergency & Site Setup",
+   actAr:"يجب توفير اللوحات الإلزامية ونقطة التجمع وأرقام الطوارئ وتنظيم مسارات المشاة والمعدات."},
+  {k:"inf", code:"INF", hz:"traffic", ar:"البنية التحتية والطرق", en:"Infrastructure & Road Works",
+   actAr:"يجب تطبيق خطة إدارة المرور المعتمدة وتسييج أعمال الطرق بحواجز ولوحات وإنارة."},
+  {k:"conf", code:"CSE", hz:"asph", ar:"الأماكن المغلقة والمناهيل", en:"Confined Spaces",
    actAr:"يجب إيقاف الدخول حتى توفر التصريح وقياس الغازات والتهوية ومعدات الإنقاذ والمراقب."},
-  {k:"good", code:"GP", ar:"ممارسات جيدة (إشادة)", en:"Good Practice",
+  {k:"inc", code:"INC", hz:"", ar:"الحوادث وشبه الحوادث", en:"Incidents & Near Misses",
+   actAr:"يجب الإبلاغ عن الحادثة خلال 24 ساعة والتحقيق في السبب الجذري ومشاركة الدروس المستفادة."},
+  {k:"good", code:"GP", hz:"", ar:"ممارسات جيدة (إشادة)", en:"Good Practice",
    actAr:"عمل ممتاز، يرجى المحافظة على هذا المستوى."}
 ];
 
@@ -1418,7 +924,157 @@ const T = [
 ["gp07","good","G","مولد مطابق للاشتراطات","a generator set up with a drip tray, fire extinguisher, LOTO and barricade","",""],
 ["gp08","good","G","اجتماع سلامة (TBT) فعّال","an effective toolbox talk conducted before the start of work","",""],
 ["gp09","good","G","العمل على ارتفاع بربط كامل 100%","work at height carried out with 100% tie-off","",""],
-["gp10","good","G","إغلاق الملاحظات بسرعة وبأدلة واضحة","observations closed out promptly with clear photo evidence","",""]
+["gp10","good","G","إغلاق الملاحظات بسرعة وبأدلة واضحة","observations closed out promptly with clear photo evidence","",""],
+["gp11","good","G","تركيب مسبق الصب منظم بمنطقة استبعاد","precast erection well controlled with an exclusion zone, tag lines and a certified signalman","",""],
+["gp12","good","G","مرافق رعاية ممتازة (مياه، ظل، دورات مياه)","good welfare facilities provided (cool water, shaded rest area and clean toilets)","",""],
+
+/* ======================== إضافات v3.1 ======================== */
+/* ---------- PRE: المسبق الصب — التركيب والتخزين ---------- */
+["pre01","pre","H","عمال تحت العنصر المسبق أثناء التركيب","workers positioned under the precast element during erection","Stop the erection and keep all workers outside the drop zone until the element is landed and secured.","struck crush"],
+["pre02","pre","H","لوح مسبق مركّب بدون دعامات مؤقتة","an erected precast wall panel without temporary props/braces","Install the temporary props as per the erection method statement before releasing the crane hook.","collapse crush"],
+["pre03","pre","H","عمال على العناصر المسبقة بدون حماية من السقوط","workers standing on precast elements/hollow cores at height without fall protection","Stop the work and provide a lifeline or anchor point with 100% tie-off for everyone on the elements.","fall"],
+["pre04","pre","H","تكديس الهولوكور فوق العدد المسموح","hollow-core slabs stacked above the permitted number of layers","Reduce the stack to the approved number of layers with aligned bearers.","crush collapse"],
+["pre05","pre","M","ساحة تخزين المسبق بدون حواجز ومسارات","the precast storage yard without barricades, access signs or marked traffic routes","Barricade the yard, mark the vehicle and pedestrian routes and post the required signs.","struck coll"],
+["pre06","pre","H","أدوات رفع غير معتمدة للعناصر المسبقة","unapproved lifting anchors/shackles used on the precast elements","Use only the certified lifting inserts and gear specified by the precast supplier.","struck"],
+["pre07","pre","M","عناصر مسبق مكسورة متروكة بدون تسييج","broken precast elements left in the open area without barricading","Remove the broken elements or barricade them until disposal.","trip struck"],
+["pre08","pre","M","أعمال الحقن (Grouting) بدون معدات حماية","grouting works carried out without gloves and eye protection","Provide chemical-resistant gloves and goggles to the grouting crew.","chem eye"],
+["pre09","pre","H","رفع أكثر من لوح هولوكور بنفس الوقت","multiple hollow-core slabs lifted at once against the approved MSRA","Lift one element at a time as per the approved method statement.","struck"],
+["pre10","pre","M","عمال يستريحون بين أو تحت العناصر المسبقة","workers resting between/under the stored precast elements","Move the workers out and provide a proper rest shelter away from the storage and lifting area.","crush heat"],
+["pre11","pre","M","تركيب بدون مراقب أو ريقر مؤهل","precast erection without a competent signalman/spotter","Assign a certified signalman to guide every lift.","struck"],
+["pre12","pre","M","مواد ومخلفات فوق الألواح بعد التركيب","loose materials and debris left on the installed hollow cores","Clear the slab and keep materials away from the open edges.","fo trip"],
+
+/* ---------- CON: الخرسانة والشدات والدعامات ---------- */
+["con01","conc","H","دعامات (Props) مائلة أو غير مثبتة تحت الشدة","formwork props that are not plumb or properly secured","Stop the pour and have the props aligned, secured and inspected by a competent person.","collapse"],
+["con02","conc","H","فك الشدات قبل الوقت المعتمد","formwork/shoring being removed before the approved striking time","Stop the striking and follow the approved striking sequence and timing.","collapse"],
+["con03","conc","M","صب خرسانة بدون حواجز ولوحات","concrete pouring without barricades or warning signs","Barricade the pour area and keep unauthorised persons out.","struck"],
+["con04","conc","H","مضخة الخرسانة بدون فرد القواعد كاملة","a concrete pump operating without its outriggers fully extended on pads","Stop the pump and set the outriggers fully extended on proper pads.","overturn"],
+["con05","conc","M","خط ضخ الخرسانة غير مثبت","the concrete pump line not secured at its joints and bends","Secure the pipeline with clamps and whip checks before pumping.","struck"],
+["con06","conc","M","عمال صب بدون جزمة مطاطية وقفازات","workers handling wet concrete without rubber boots and gloves","Provide rubber boots and gloves to prevent cement burns.","chem burn"],
+["con07","conc","M","خلاطة مونة بدون واقي","a mortar/concrete mixer without a guard on its moving parts","Fit the guard and isolate the mixer before cleaning.","injury"],
+["con08","conc","M","حواف البلاطة بدون حماية أثناء الصب","slab edges without edge protection during concreting","Install edge protection before work continues on the slab.","fall"],
+["con09","conc","L","هزاز خرسانة بكيبل تالف","a concrete vibrator with a damaged power cable","Remove it from use and replace the cable.","elec"],
+["con10","conc","M","قص وثني الحديد بدون واقي وجه","rebar cutting/bending without eye and face protection","Provide face shields and safety glasses for the rebar crew.","eye"],
+
+/* ---------- FIN: أعمال التشطيب ---------- */
+["fin01","fin","M","رش دهان بدون كمامة مناسبة أو تهوية","spray painting without a suitable respirator or ventilation","Provide organic-vapour respirators and ventilate the area.","resp chem"],
+["fin02","fin","M","قص بلاط أو بلوك جاف بدون رش ماء أو كمامة","dry tile/block cutting without water suppression or dust masks","Use wet cutting and provide FFP2 dust masks.","resp"],
+["fin03","fin","H","غلاية بيتومين تشتغل بدون مراقبة","a bitumen kettle left heating unattended","Assign an attendant and keep a fire extinguisher next to the kettle.","fire burn"],
+["fin04","fin","M","لياسة أو دهان من منصة مرتجلة","plastering/painting carried out from an improvised platform","Provide an approved mobile platform or step ladder.","fall"],
+["fin05","fin","L","علب دهان فاضية ومخلفات بوية مبعثرة","empty paint containers and paint waste scattered on site","Collect them as hazardous waste in a labelled container.","env fire"],
+["fin06","fin","M","غسيل فرش الدهان على التربة","paint brushes and tools washed out onto the soil","Wash tools only at the designated washout point.","env"],
+["fin07","fin","M","ماكينة قص بلاط مبللة قرب توصيلات كهرباء","a wet tile cutter used next to unprotected electrical connections","Keep the connections dry and use an RCD-protected supply.","elec"],
+["fin08","fin","M","تطبيق عزل أو سيلانت بدون حماية تنفس","workers applying insulation/sealant without respiratory protection","Provide suitable respirators as per the product SDS.","resp chem"],
+["fin09","fin","L","مواد لاصقة أو سيلانت مفتوحة في منطقة العمل","open adhesive/sealant containers left in the work area","Close the containers and return them to the COSHH store.","chem fire"],
+
+/* ---------- EMG: اللوحات والطوارئ وتنظيم الموقع ---------- */
+["emg01","emg","L","لا توجد لوحات السلامة الإلزامية عند المدخل","no mandatory PPE/safety signs at the work area entrance","Post the mandatory safety signs at all entrances.",""],
+["emg02","emg","M","لا توجد نقطة تجمع واضحة","no clearly marked emergency assembly point","Install an assembly point sign and brief the workforce on it.","access"],
+["emg03","emg","M","أرقام الطوارئ غير معروضة","emergency contact numbers not displayed at the work area","Display the emergency contacts and first aider details on site.",""],
+["emg04","emg","M","سياج الموقع تالف أو مفتوح","the site fence/hoarding damaged or left open","Repair the fence and keep the gates closed to prevent unauthorised entry.","access"],
+["emg05","emg","M","أشخاص غير مصرح لهم داخل الموقع","unauthorised persons inside the site","Escort them out and control access at the gate.","injury"],
+["emg06","emg","L","لوحات تحذيرية تالفة أو باهتة","damaged or faded warning signs","Replace the damaged signs.",""],
+["emg07","emg","M","لا يوجد مسار مشاة منفصل عن المعدات","no segregated pedestrian route away from moving plant","Mark and barricade a pedestrian route separated from vehicle movement.","struck coll"],
+["emg08","emg","L","لا توجد لوحة معلومات المقاول بالموقع","no contractor information board (responsible persons, permits, contacts) at the work area","Install the information board with names and contact numbers.",""],
+
+/* ---------- INF: البنية التحتية والطرق ---------- */
+["inf01","inf","M","أنابيب أو صمامات بنية تحتية على الطريق بدون حواجز","infrastructure valve pipes left on the road without barricades or signs","Barricade the pipes with reflective signs or move them off the road.","coll trip"],
+["inf02","inf","H","أعمال على الطريق بدون إدارة مرور","road works without traffic management (signs, cones, flagman)","Install the approved traffic management layout before work continues.","traffic struck"],
+["inf03","inf","M","مدحلة أو معدة رص بدون مراقب","a compaction roller operating without a banksman","Assign a banksman and keep workers clear of the roller.","struck crush"],
+["inf04","inf","M","خندق يقطع الطريق بدون حواجز وإنارة","a trench across the road without barricades or warning lights","Install hard barriers with warning lights and provide a safe crossing.","fall traffic"],
+["inf05","inf","M","تحويلة مرورية بدون لوحات واضحة","a traffic diversion without clear signs or lighting","Install diversion signs, cones and lights.","traffic"],
+["inf06","inf","L","أتربة الحفر منثورة على الطريق","excavated soil spilled onto the site road","Clean the road and keep the spoil within the work area.","coll slip"],
+
+/* ---------- إضافات للتصنيفات الحالية ---------- */
+["mwp15","mewp","H","رفع عمال بسطل اللودر أو على شوكة الرافعة","workers being lifted in a loader bucket or on forklift forks","Stop immediately; use an approved MEWP to lift people.","fall crush"],
+["mwp16","mewp","M","معدة ترجع للخلف بدون منبه أو مراقب","equipment reversing without a reverse alarm or banksman","Repair the reverse alarm and assign a banksman for reversing.","struck"],
+["mwp17","mewp","L","المشغل بدون حزام أمان المقعد","an equipment operator not wearing the seat belt","Instruct the operator to wear the seat belt at all times.","overturn"],
+["mwp18","mewp","H","معدة تعمل قريبة من خطوط كهرباء هوائية","equipment operating close to overhead power lines","Stop the work and keep the minimum safe distance using goalposts and a spotter.","elec"],
+["mwp19","mewp","M","عامل يطلع من سلة المان لفت للمبنى","a worker climbing out of the manlift basket onto the structure","Stop the practice; exit only at ground level or through an approved access.","fall"],
+["mwp20","mewp","M","سلة المان لفت محمّلة فوق الحمولة","a manlift basket overloaded with workers/materials","Respect the basket's rated capacity.","fall collapse"],
+["mwp21","mewp","H","استخدام كباش الحفار لرفع المواد","an excavator bucket used to lift and suspend materials","Stop; lift loads only with rated lifting equipment and certified gear.","struck"],
+["wah17","wah","M","الوقوف على آخر درجة في سلم A","a worker standing on the top step of an A-frame ladder","Use a taller ladder or a platform; never stand on the top two steps.","fall"],
+["wah18","wah","M","سلم A مسكّر مسنود على الجدار","a closed A-frame ladder leaned against the wall as a straight ladder","Use the ladder fully opened and locked, or use a proper extension ladder.","fall"],
+["wah19","wah","M","سلم خشبي مصنوع محليًا","a locally made wooden ladder in use","Remove it from site and provide an approved ladder.","fall"],
+["wah20","wah","H","عمل على جدار السطح (البارابيت) بدون حماية","work on the roof parapet without fall protection","Stop the work and provide a lifeline with 100% tie-off for parapet work.","fall"],
+["ele18","elec","M","توصيلات تمديد متسلسلة وفيش محمّل فوق طاقته","daisy-chained extension leads and an overloaded socket","Remove the daisy-chain and use a properly rated distribution box.","elec fire"],
+["ele19","elec","L","بكرة كيبل مستخدمة بدون فرد كامل","a cable reel in use without being fully unwound","Fully unwind the cable reel to avoid overheating.","fire"],
+["ele20","elec","M","ماكينة لحام بدون تأريض أو كيابلها تالفة","a welding machine without proper earthing or with damaged welding cables","Earth the machine and replace the damaged cables before use.","elec burn"],
+["fir15","fire","M","أسطوانات غاز ممددة على الأرض","gas cylinders lying horizontally on the ground","Store and use the cylinders upright, secured with chains.","expl"],
+["fir16","fire","M","خراطيم غاز تالفة أو مربوطة بسلك","damaged gas hoses or hoses joined with wire","Replace the hoses and fit proper crimped connections.","fire expl"],
+["fir17","fire","L","لحام بدون ستارة تحمي اللي حوله","welding without screens to protect nearby workers","Install welding screens around the hot work area.","eye burn"],
+["fir18","fire","L","طفاية بدون بطاقة الفحص الشهري","a fire extinguisher without the monthly inspection tag","Inspect the extinguisher and update its tag.","fire"],
+["ppe15","ppe","M","عامل لابس صندل أو حذاء عادي","a worker wearing sandals/ordinary shoes on site","Remove the worker from the work area until approved safety shoes are worn.","foot"],
+["ppe16","ppe","M","حزام الأمان ملبوس بشكل خاطئ","a full body harness worn incorrectly (loose leg straps/chest strap not fastened)","Adjust the harness properly and brief the worker on its correct use.","fall"],
+["act13","acts","H","النوم أو الاستراحة تحت المركبات والمعدات","workers resting or sleeping under vehicles/equipment","Stop immediately and provide a proper shaded rest area.","crush"],
+["act14","acts","M","استخدام الجوال أثناء العمل على ارتفاع","a worker using a mobile phone while working at height","Stop the practice; phone use is allowed only in safe areas.","fall"],
+["act15","acts","M","حمل أوزان ثقيلة يدويًا بدون وسيلة مساعدة","workers manually carrying heavy loads (blocks/pipes) without mechanical aids","Use mechanical aids or team lifting and brief the crew on manual handling.","injury"],
+["act16","acts","L","مزاح ولعب أثناء العمل","horseplay in the work area","Stop the behaviour and brief the crew on the site rules.","injury"],
+["act17","acts","M","عامل يقطع مسار معدة متحركة","a worker walking across the path of moving equipment","Brief the worker and enforce the use of the pedestrian route.","struck"],
+["hk14","hk","L","أكياس ونايلون يطيرها الهواء","plastic and packaging waste blown around by the wind","Collect the light waste and keep the bins covered.","env"],
+["hk15","hk","L","حاويات نفايات بدون غطاء أو تصنيف","waste bins without covers or segregation labels","Provide covered, labelled bins for each waste type.","env hygiene"],
+["wel12","wel","M","لا يوجد مكان لغسل اليدين","no hand-washing facility near the toilets/rest area","Provide a hand-washing station with soap and water.","hygiene"],
+["chm14","coshh","H","مواد كيميائية أو وقود في قوارير مياه شرب","chemicals/fuel decanted into drinking water bottles","Remove them immediately; use only labelled, approved containers.","chem"],
+["chm15","coshh","L","براميل زيت أو وقود بدون صينية احتواء","oil/fuel drums stored without secondary containment","Place the drums on a spill pallet or in a bunded area.","env fire"],
+["env12","env","L","تسرب مياه من خزان أو خط","water leaking from a tank/pipe and creating wet areas","Repair the leak and dry the area.","slip"],
+["ptw11","ptw","M","التصريح غير معلّق في موقع العمل","the permit to work not displayed at the work location","Display the valid permit at the work location.",""],
+["ptw12","ptw","L","قوائم الفحص اليومي غير محدّثة","daily inspection checklists (scaffolds, ladders, tools) not updated","Complete and record the daily inspections.",""],
+["lft15","lift","H","رفع حمل فوق أشخاص أو منطقة مشغولة","a load being lifted over people/an occupied area","Stop and re-route the lift away from occupied areas.","struck"],
+["lft16","lift","M","جدول أحمال الرافعة غير موجود بالكابينة","the crane load chart not available in the cabin","Provide the load chart and verify every lift against it.","struck"],
+["lft17","lift","M","رفع في رياح قوية بدون قياس سرعة الرياح","lifting continuing in strong wind without wind-speed monitoring","Stop lifting when the wind exceeds the crane's limit and monitor the wind speed.","struck"],
+["scf13","scaf","L","قاعدة السقالة بدون حواجز","a scaffold without barricades around its base","Barricade the base and post \"Scaffold in use\" signs.","struck"],
+
+/* ======================== إضافات v3.2 ======================== */
+/* ---------- INC: الحوادث وشبه الحوادث ---------- */
+["inc01","inc","H","شبه حادث: معدة كادت تصدم عامل","a near miss where moving equipment nearly struck a worker","Report the near miss, investigate the root cause and brief all operators and flagmen.","struck coll"],
+["inc02","inc","H","شبه حادث: سقوط جسم من ارتفاع","a near miss involving an object falling from height","Report it, barricade the area below and secure all tools and materials at height.","fo"],
+["inc03","inc","H","شبه حادث: رافعة قريبة من حافة الحفرية","a near miss with a crane positioned close to an excavation edge","Reposition the crane, report the near miss and share the lesson learned with all lifting crews.","overturn"],
+["inc04","inc","M","إصابة بسيطة لم يُبلّغ عنها","a minor injury/first-aid case that was not reported to HSE","Report the case, record the first aid given and investigate the cause.","injury"],
+["inc05","inc","H","حادث لم يُبلّغ عنه","an incident on site that was not reported","Submit the incident report within 24 hours and preserve the scene for investigation.",""],
+["inc06","inc","M","تلف خدمات أو ممتلكات بسبب معدة","damage to utilities/property caused by equipment","Stop the equipment, report the incident and verify utility locations before digging.",""],
+["inc07","inc","M","الدروس المستفادة من حادث سابق غير مطبقة","lessons learned from a previous incident not implemented on site","Brief all crews on the lessons learned and verify the controls are in place.",""],
+
+/* ---------- إضافات عامة ---------- */
+["fin10","fin","M","تركيب مكيفات على السطح بدون حماية من السقوط","AC units installed on the roof without edge protection or fall arrest","Install edge protection or a lifeline with 100% tie-off before the installation continues.","fall"],
+["fin11","fin","M","رفع وحدات التكييف للسطح بطريقة غير آمنة","AC units lifted to the roof in an unsafe manner","Use a certified lifting method with the area below barricaded.","fo"],
+["fin12","fin","M","تركيب زجاج بدون قفازات وشفاطات رفع","glass panels handled without cut-resistant gloves or suction lifters","Provide cut-resistant gloves and suction lifters and use a two-person lift.","cut"],
+["fin13","fin","M","أعمال الواجهات بدون حماية من سقوط الأجسام","façade/cladding works without falling-object protection below","Barricade the area below and secure tools and materials at height.","fo"],
+["fin14","fin","M","تكسير الجدران للتمديدات بدون نظارة وكمامة","wall chasing for MEP works without eye protection and a dust mask","Provide goggles and dust masks and use dust extraction.","eye resp"],
+["emg09","emg","M","لا يوجد مسعف مدرب في المنطقة","no trained first aider available at the work area","Assign a trained first aider and display their name and number.",""],
+["emg10","emg","L","رقم الفيلا غير واضح لفرق الطوارئ","the villa/work location number not displayed for emergency response","Display the villa number clearly at the entrance.",""],
+["ele21","elec","H","تسرب ماء المكيف قرب توصيلات كهرباء","AC condensate water leaking near electrical connections","Isolate the circuit, fix the leak and relocate the connection away from water.","elec slip"],
+["ele22","elec","M","سخان أو أجهزة كهربائية غير معتمدة في الاستراحة","unapproved electrical appliances (heaters/kettles) in the welfare area","Remove them or have them installed and tested by a qualified electrician.","elec fire"],
+["wel13","wel","M","محطة مياه الشرب داخل منطقة التخزين","a drinking water station placed inside the material storage area","Relocate it to a clean, shaded area away from materials and traffic.","hygiene struck"],
+["wel14","wel","L","مظلة الاستراحة متضررة","a damaged rest shelter (broken seats/shade)","Repair the shelter and keep it clean.","heat"],
+["hk16","hk","L","بقايا أكل مكشوفة تجذب الحشرات والزواحف","exposed food waste attracting pests, snakes and scorpions","Use covered bins and remove food waste daily.","hygiene health"],
+["act18","acts","M","تصوير أو فيديو داخل الموقع بدون تصريح","unauthorised photography/video recording on site","Stop the recording and remind the workers of the site photography restriction.",""],
+["act19","acts","M","حمل مواد طويلة على الدرج بدون مساعد","workers carrying long materials up the stairs without assistance","Use a hoist or team lifting with a clear route.","fall injury"],
+["act20","acts","L","رمي المواد بين العمال بدل التسليم","materials being thrown between workers instead of handed over","Stop the practice and hand over or lower materials in a controlled way.","struck"],
+["inf07","inf","M","أعمال ليلية بدون إنارة كافية","night works without adequate lighting","Provide lighting towers and reflective vests before work continues.","coll trip"],
+["inf08","inf","L","تركيب البردورات يدويًا بدون أدوات رفع","kerb stones handled manually without lifting aids","Use kerb lifters or mechanical aids.","hand injury"],
+["inf09","inf","L","دكاكة تشتغل بدون حماية سمع","a plate compactor operated without hearing protection","Provide ear protection and rotate operators to limit vibration exposure.","noise"],
+["mwp22","mewp","M","تعبئة وقود المعدة والمحرك شغال","equipment being refuelled with the engine running","Switch off the engine and use a drip tray and spill kit during refuelling.","fire"],
+["uc11","cond","M","شبك حديد بأطراف حادة مكشوف","steel mesh with sharp edges left unprotected","Cover or remove the mesh and protect the sharp edges.","cut trip"],
+["uc12","cond","L","سقف منخفض أو عائق علوي بدون علامة","low headroom/an overhead obstruction without warning marking","Mark the obstruction with hazard tape and signs.","head"],
+["uc13","cond","M","برادة أو خزان مياه على حافة غير محمية","a water cooler/tank placed at an unprotected edge","Relocate it away from the edge to a safe, shaded place.","fall fo"],
+["gp13","good","G","إدارة مرور ممتازة مع فلاقمان","good traffic control with flagmen and clear signage","",""],
+["gp14","good","G","تطبيق ممتاز لإجراءات الحرارة","good heat-stress controls with shaded rest areas and cool water","",""],
+["gp15","good","G","تخزين كيماويات مطابق","chemicals stored correctly in the COSHH store with SDS and a spill kit","",""],
+["gp16","good","G","كيابل مرتبة على حوامل","cables neatly routed on hangers with clear walkways","",""],
+["tls09","tools","M","مسدس مسامير (Nail gun) بدون نظارة أو تدريب","a nail gun in use without safety glasses or operator training","Stop its use until the operator is trained and wears safety glasses; keep others clear of the firing line.","eye"],
+["tls10","tools","M","عدد تُستخدم على ارتفاع بدون حبل ربط","hand tools used at height without tool lanyards","Secure all tools at height with lanyards and keep the area below barricaded.","fo"],
+["exc13","exc","H","عامل داخل الحفرية والحفار شغال","a worker inside the excavation while the excavator is digging","Stop the excavator; no one shall enter the excavation while plant is operating.","struck collapse"],
+["exc14","exc","H","حفرية بجانب أساسات فيلا قائمة بدون تقييم","an excavation next to an existing villa foundation without an engineering assessment","Stop deepening the excavation until the adjacent foundation is assessed and supported.","collapse"],
+["scf14","scaf","H","سقالة غير مربوطة بالمبنى (Ties)","a scaffold not tied to the structure","Install ties as per the scaffold design, then have the scaffold re-inspected and tagged before use.","collapse fall"],
+["scf15","scaf","H","تحريك سقالة متحركة وعليها عامل","a mobile scaffold being moved with a worker on the platform","Stop immediately; nobody shall remain on a mobile scaffold while it is moved.","fall overturn"],
+["fir19","fire","M","طفاية غير مناسبة عند اللوحة الكهربائية","an unsuitable extinguisher type (water/foam) at the electrical panel","Provide a CO2 extinguisher next to the electrical panel.","fire elec"],
+["wel15","wel","H","عامل تظهر عليه أعراض الإجهاد الحراري","a worker showing signs of heat stress (dizziness, heavy sweating)","Stop his work, move him to a cool shaded area, give him water and inform the first aider immediately.","heat"],
+["wel16","wel","M","لا يوجد جدول عمل وراحة في الحر","no work–rest cycle applied during the high heat index","Apply the heat stress work–rest schedule with shaded breaks and cool drinking water.","heat"],
+["emg11","emg","M","طريق الطوارئ مسدود بمواد أو سيارات","the emergency vehicle access route blocked by materials/vehicles","Clear the route immediately and keep it free at all times.","access"],
+["emg12","emg","L","العمال لا يعرفون نقطة التجمع وإجراءات الطوارئ","workers unaware of the assembly point and emergency procedure","Brief all workers on the emergency plan and assembly point in the next toolbox talk.",""],
+["uc14","cond","M","اختبار ضغط أنابيب بدون حواجز ولوحات","pressure testing of pipes without barricades or warning signs","Barricade the test area, display warning signs and keep unauthorized persons out.","struck"],
+["uc15","cond","M","جدار بلوك جديد غير مدعّم","a newly built block wall left unsupported","Provide temporary support and keep people away until the wall has cured.","collapse"],
+["gp17","good","G","مسؤول سلامة متواجد ومتابع للعمل","an HSE officer present and actively supervising the activity","",""],
+["gp18","good","G","سقالة مفحوصة ببطاقة خضراء ومكتملة الحماية","a scaffold inspected and tagged green, with full guardrails and toe boards","",""]
 ];
 
 /* مرادفات البحث — كلمات الموقع الدارجة ← كلمات موجودة في القوالب */
@@ -1468,7 +1124,37 @@ const SYN = [
   ["فلاق","فلاقمان","flagman","مراقب"],
   ["غبار","dust"],
   ["سقف","سطح","roof"],
-  ["منصه","platform","برميل","براميل","drum","barrel"]
+  ["منصه","platform","برميل","براميل","drum","barrel"],
+  ["هولوكور","هولو","hollow","hollowcore"],
+  ["حقن","قراوت","grout","grouting"],
+  ["شده","شدات","بروب","دعامه","دعامات","prop","props","formwork","shoring"],
+  ["مضخه","بمب","pump"],
+  ["بلاط","سيراميك","tile","tiles"],
+  ["سياج","شبك","فنس","fence","hoarding"],
+  ["تجمع","assembly"],
+  ["مدحله","رولر","roller","compaction"],
+  ["صمام","فالف","valve"],
+  ["غلايه","بيتومين","زفت","bitumen","kettle"],
+  ["خرسانه","صبه","صب","concrete","pour"],
+  ["جوال","موبايل","phone"],
+  ["نوم","نايم","ينام","sleeping","resting"],
+  ["رياح","wind"],
+  ["مرور","تحويله","traffic","diversion"],
+  ["حادث","حادثه","اصابه","incident","injury"],
+  ["شبه حادث","كاد","near miss"],
+  ["مكيف","مكيفات","تكييف","ac"],
+  ["زجاج","قزاز","glass"],
+  ["واجهه","واجهات","كلادينق","facade","cladding"],
+  ["اسعاف","مسعف","first aid","first aider"],
+  ["عقرب","عقارب","ثعبان","ثعابين","حشرات","snake","scorpion","pests"],
+  ["تصوير","فيديو","كاميرا","photography","video"],
+  ["ليل","ليلي","انارة","night","lighting"],
+  ["بردوره","بردورات","kerb","curb"],
+  ["دكاكه","compactor"],
+  ["مسدس مسامير","مسدس","نيل قن","nail gun","nailer"],
+  ["ضربه شمس","اجهاد","دوخه","دايخ","heat stroke","exhaustion"],
+  ["طوارئ","طواري","اخلاء","emergency","evacuation"],
+  ["بلوك","بلك","طابوق","block","blockwork"]
 ];
 
 </script>
@@ -1480,11 +1166,12 @@ const AREAS = {"2AH":[[[46.75922,24.84876],[46.75924,24.84888],[46.76122,24.8498
 /* =====================================================================
    دفتر ملاحظات HSE — SEDRA  ·  v3
    ===================================================================== */
-const APP_VERSION = "3.0";
-/* رابط Web App (آخره /exec) — لو حطيته هنا يصير مثبت لكل الأجهزة بدون إعداد (اختياري) */
-const DEFAULT_SHEET_URL = "";
-/* رابط الشيت نفسه (للفتح والعرض فقط — الكتابة تتم عبر رابط Web App) */
+const APP_VERSION = "3.1";
+/* الصفحة مربوطة بالشيت مباشرة عبر هذا الرابط (Apps Script Web App) — لا يوجد أي إعداد على الجوال */
+const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbwGykUhIRevu8ZfniqsF6xfAtyyXwCwpP5kgdCbvSyp4PWTEhBk3f0ZNIRwQU7ynBaQ/exec";
+/* رابط الشيت نفسه (لزر «فتح الشيت») */
 const SHEET_LINK = "https://docs.google.com/spreadsheets/d/1GVG6mwqdIGwz3Friq5JOcIc94LC7kMtJ02wIWjZ2JZE/edit";
+const OLD_CODE_MSG = "كود Apps Script في الشيت ما زال القديم — حدّثه مرة وحدة، وملاحظاتك محفوظة بالجوال لين يتحدث";
 
 /* ---------------- utilities ---------------- */
 const $ = (s, r = document) => r.querySelector(s);
@@ -1517,6 +1204,12 @@ function normAr(s){
     .replace(/[أإآٱ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/ؤ/g, "و").replace(/ئ/g, "ي")
     .replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
 }
+/* الوصف الإنجليزي للقالب: يجي بعد كلمة Observed (بدون Observed وبدون نقطة، والحرف الأول صغير إلا لو اختصار مثل PPE) */
+function npNorm(s){
+  s = String(s || "").trim().replace(/^observed\s+(that\s+)?/i, "").replace(/[.\s]+$/, "");
+  return /^[A-Z][a-z]/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s;
+}
+function actNorm(s){ s = String(s || "").trim(); if(!s) return ""; s = s.charAt(0).toUpperCase() + s.slice(1); return /[.!]$/.test(s) ? s : s + "."; }
 function joinEn(a){ if(a.length <= 1) return a[0] || ""; if(a.length === 2) return a[0] + " and " + a[1]; return a.slice(0, -1).join(", ") + ", and " + a[a.length - 1]; }
 function joinAr(a){ if(a.length <= 1) return a[0] || ""; return a.slice(0, -1).join("، ") + " و" + a[a.length - 1]; }
 function vib(){ try{ navigator.vibrate && navigator.vibrate(8); }catch(e){} }
@@ -1546,14 +1239,6 @@ function copyText(text){
   }catch(e){}
   return Promise.resolve(fallback());
 }
-function download(name, text, type){
-  const blob = new Blob([text], {type: type || "text/plain;charset=utf-8"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = name;
-  document.body.appendChild(a); a.click();
-  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
-}
-
 /* ---------------- constants ---------------- */
 const RISK = {
   H:{ar:"عالية", en:"High", c:"var(--high)"},
@@ -1584,8 +1269,9 @@ Object.keys(PHASES).forEach(p => PHASES[p].sort());
 function phaseOf(code){ return code ? (/^2[AB]/.test(code) ? code.slice(0, 2) : code[0]) : ""; }
 
 /* ---------------- state ---------------- */
-const DEF_SETTINGS = {url:"", name:"Omar Alqarni", lang:"en", style:"full", showLoc:true, ref:false, theme:"auto", phase:"5", area:"", photoUpload:true};
+const DEF_SETTINGS = {url:"", name:"Omar Alqarni", theme:"auto", phase:"5", area:"", photoUpload:true};
 let S = Object.assign({}, DEF_SETTINGS, store.get("hse2_settings", {}));
+["lang", "style", "showLoc", "ref"].forEach(k => delete S[k]); // خيارات أُلغيت — الصيغة ثابتة
 let OBS = store.get("hse2_obs", []);
 let OUTBOX = store.get("hse2_outbox", []);
 let USAGE = store.get("hse2_usage", {});
@@ -1601,8 +1287,6 @@ const saveOutbox = () => store.set("hse2_outbox", OUTBOX);
 (function migrate(){
   if(store.raw("hse2_migrated")) return;
   try{
-    const oldUrl = store.raw("hse_sync_url");
-    if(oldUrl && !S.url) S.url = oldUrl.trim();
     const oldCustom = store.get("hse_custom_items", null);
     const map = {ppe:"ppe", helmet:"ppe", shoes:"ppe", fall:"wah", height:"wah", scaffold:"scaf", excavation:"exc",
       electrical:"elec", fire:"fire", housekeeping:"hk", weather:"wel", access:"cond", acts:"acts",
@@ -1610,9 +1294,8 @@ const saveOutbox = () => store.set("hse2_outbox", OUTBOX);
     if(oldCustom && typeof oldCustom === "object"){
       Object.keys(oldCustom).forEach(k => (oldCustom[k] || []).forEach(it => {
         if(!it || !it.ar || !it.en) return;
-        const en = String(it.en).trim();
-        CUSTOM.push({id:"c-" + rnd(6), cat: map[k] || "cond", risk: it.urgent ? "H" : "M", ar: it.ar,
-          np: en.charAt(0).toLowerCase() + en.slice(1).replace(/\.$/, ""), act:"", hz:"", updatedAt: new Date().toISOString()});
+        CUSTOM.push({id:"c-" + rnd(6), cat: map[k] || "cond", risk: it.urgent ? "H" : "M", ar: String(it.ar).trim(),
+          np: npNorm(it.en), act:"", hz:"", updatedAt: new Date().toISOString()});
       }));
       store.set("hse2_custom", CUSTOM);
     }
@@ -1620,19 +1303,8 @@ const saveOutbox = () => store.set("hse2_outbox", OUTBOX);
   }catch(e){}
   store.set("hse2_migrated", 1);
 })();
-if(!S.url && DEFAULT_SHEET_URL) S.url = DEFAULT_SHEET_URL;
-
-/* setup link: #setup=<base64url> */
-(function setupFromHash(){
-  const h = location.hash || "";
-  if(h.indexOf("#setup=") !== 0) return;
-  try{
-    const b = h.slice(7).replace(/-/g, "+").replace(/_/g, "/");
-    const url = decodeURIComponent(escape(atob(b)));
-    if(/^https:\/\/script\.google(usercontent)?\.com\//.test(url)){ S.url = url; saveS(); setTimeout(() => toast("تم ربط هذا الجهاز بالشيت ✓"), 400); }
-  }catch(e){}
-  try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
-})();
+/* الرابط المثبت داخل الصفحة له الأولوية دائمًا — الصفحة مربوطة بالشيت بدون أي إعداد */
+if(DEFAULT_SHEET_URL && S.url !== DEFAULT_SHEET_URL){ S.url = DEFAULT_SHEET_URL; S.verifiedUrl = ""; saveS(); }
 
 /* ---------------- templates ---------------- */
 let TPL = {}, TPL_LIST = [], SEARCH_INDEX = [];
@@ -1647,33 +1319,53 @@ function buildTemplates(){
   });
   CUSTOM.forEach(c => {
     if(!CAT[c.cat]) c.cat = "cond";
-    const t = {id:c.id, cat:c.cat, risk:c.risk || "M", ar:c.ar, np:c.np, act:c.act || "", hz:hzList(c.hz), custom:true};
+    const risk = c.cat === "good" ? "G" : (RISK[c.risk] ? c.risk : "M");
+    const t = {id:c.id, cat:c.cat, risk, ar:c.ar, np:c.np, act:c.act || "", hz:hzList(c.hz || CAT[c.cat].hz), custom:true};
     TPL[t.id] = t; TPL_LIST.push(t);
   });
   SEARCH_INDEX = TPL_LIST.map(t => ({t, a: normAr(t.ar), all: normAr([t.ar, t.np, t.act, CAT[t.cat].ar, CAT[t.cat].en, CAT[t.cat].code].join(" "))}));
 }
 const SYN_N = SYN.map(g => g.map(normAr));
+/* مرادفات من كلمتين (نيل قن، مان لفت، شبه حادث…) تنطابق كعبارة كاملة */
+const PHRASES = [];
+SYN_N.forEach(g => g.forEach(w => { if(w.includes(" ")) PHRASES.push([w, g]); }));
+PHRASES.sort((a, b) => b[0].length - a[0].length);
 function expandToken(tok){
   const out = new Set([tok]);
   SYN_N.forEach(g => { if(g.some(w => w === tok || (tok.length >= 3 && (w.startsWith(tok) || tok.startsWith(w) && w.length >= 3)))) g.forEach(w => out.add(w)); });
   return Array.from(out);
 }
 function search(q){
-  const toks = normAr(q).split(" ").filter(Boolean).map(t => (t.length > 4 && t.startsWith("ال")) ? t.slice(2) : t);
-  if(!toks.length) return [];
-  const exp = toks.map(expandToken);
+  let nq = " " + normAr(q) + " ";
+  const groups = [];
+  PHRASES.forEach(([w, g]) => { if(nq.includes(" " + w + " ")){ nq = nq.replace(" " + w + " ", " "); groups.push(g); } });
+  const toks = nq.trim().split(" ").filter(Boolean).map(t => (t.length > 4 && t.startsWith("ال")) ? t.slice(2) : t);
+  if(!toks.length && !groups.length) return [];
+  const exp = toks.map(expandToken).concat(groups).map(vars => vars.map(wordRx));
   const res = [];
   SEARCH_INDEX.forEach(ix => {
     let score = 0;
     for(const vars of exp){
       let hit = 0;
-      for(const v of vars){ if(ix.a.includes(v)){ hit = 3; break; } if(ix.all.includes(v)) hit = Math.max(hit, 1); }
+      for(const rx of vars){ if(rx.test(ix.a)){ hit = 3; break; } if(!hit && rx.test(ix.all)) hit = 1; }
       if(!hit) return;
       score += hit;
     }
     res.push({t: ix.t, score: score * 100 + usageScore(ix.t.id)});
   });
   return res.sort((a, b) => b.score - a.score).map(r => r.t);
+}
+/* الكلمة لازم تكون بداية كلمة (مع ال/و/ب/لل) — عشان «كاب» ما تطابق «انسكاب»، والكلمات القصيرة (حر، ac) تطابق كلمة كاملة فقط */
+const RX_CACHE = new Map();
+function wordRx(v){
+  let rx = RX_CACHE.get(v);
+  if(rx) return rx;
+  const latin = /^[a-z0-9]/.test(v);
+  const whole = v.length <= 2 || (latin && v.length <= 3);
+  const body = v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  rx = new RegExp("(?:^|\\s)" + (latin ? "" : "(?:ال|وال|بال|فال|لل|و|ب|ف)?") + body + (whole ? "(?=\\s|$)" : ""), "u");
+  RX_CACHE.set(v, rx);
+  return rx;
 }
 function usageScore(id){ return (USAGE_SEED[id] || 0) + (USAGE[id] || 0) * 5; }
 
@@ -1697,29 +1389,24 @@ function compose(items, opt){
   opt = opt || {};
   const bad = items.filter(t => t.risk !== "G"), good = items.filter(t => t.risk === "G");
   const risk = opt.risk || autoRisk(items);
-  const short = S.style === "short";
   const f = opt.flags || {};
   let en = "", ar = "";
   if(bad.length){
     const hz = []; bad.forEach(t => t.hz.forEach(h => { if(!hz.includes(h)) hz.push(h); }));
     const hz4 = hz.slice(0, 4);
-    if(short){
-      en = cap(joinEn(bad.map(t => t.np))) + ".";
-    }else{
-      en = "Observed " + joinEn(bad.map(t => t.np)) + (hz4.length ? ", creating " + hazEn(hz4) : "") + ".";
-      if(bad.length <= 3){
-        const acts = []; bad.forEach(t => { if(t.act && !acts.includes(t.act)) acts.push(t.act); });
-        if(acts.length) en += " " + acts.join(" ");
-      }
+    en = "Observed " + joinEn(bad.map(t => t.np)) + (hz4.length ? ", creating " + hazEn(hz4) : "") + ".";
+    if(bad.length <= 3){
+      const acts = []; bad.forEach(t => { if(t.act && !acts.includes(t.act)) acts.push(t.act); });
+      if(acts.length) en += " " + acts.join(" ");
     }
-    const startsStop = !short && bad.length <= 3 && bad.some(t => /^Stop\b/.test(t.act));
+    const startsStop = bad.length <= 3 && bad.some(t => /^Stop\b/.test(t.act));
     let close;
-    if(risk === "H") close = short ? "Stop the activity and rectify immediately." : (startsStop ? "Work shall not resume until all violations are rectified." : "Stop the activity immediately and rectify all violations before work resumes.");
-    else if(risk === "M") close = short ? "Action required immediately." : "Immediate corrective action is required.";
+    if(risk === "H") close = startsStop ? "Work shall not resume until all violations are rectified." : "Stop the activity immediately and rectify all violations before work resumes.";
+    else if(risk === "M") close = "Immediate corrective action is required.";
     else close = "Kindly rectify and share the close-out.";
     if(f.instructed){
       if(risk === "H") close += " The activity was stopped on site and corrective action was instructed.";
-      else if(risk === "M") close = short ? "Corrective action was instructed on site." : "Immediate corrective action was instructed on site.";
+      else if(risk === "M") close = "Immediate corrective action was instructed on site.";
       else close = "Corrective action was instructed on site. " + close;
     }
     if(f.today){
@@ -1755,11 +1442,11 @@ function compose(items, opt){
 }
 function selItems(){ return draft.sel.map(id => TPL[id]).filter(Boolean); }
 function locLine(area, loc){ loc = String(loc || "").trim(); if(loc && area) return loc + "/" + area; return loc || area || ""; }
-function buildMessage(text, ar, area, loc, id){
-  let msg = (S.lang === "aren" && ar ? ar + "\n\n" : "") + String(text || "").trim();
+/* نص الرسالة: الملاحظة بالإنجليزي + سطر الموقع (مثل 218/5B) — نفس أسلوب القروبات */
+function buildMessage(text, area, loc){
+  let msg = String(text || "").trim();
   const line = locLine(area, loc);
-  if(S.showLoc && line) msg += "\n\n" + line;
-  if(S.ref && id) msg += (S.showLoc && line ? "\n" : "\n\n") + "Ref: " + id;
+  if(line) msg += "\n\n" + line;
   return msg;
 }
 function currentDraft(){
@@ -1845,7 +1532,8 @@ function riskTag(r){ r = RISK[r] ? r : "M"; return '<span class="rtag ' + r + '"
 function itemRow(t){
   const on = draft.sel.includes(t.id);
   return '<button type="button" class="item" data-id="' + t.id + '" aria-pressed="' + on + '" style="--rc:' + RISK[t.risk].c + '">' +
-    '<span class="tick">✓</span><span class="t"><b>' + esc(t.ar) + '</b><span class="ltr">' + esc(t.np) + "</span></span>" + riskTag(t.risk) + "</button>";
+    '<span class="tick">✓</span><span class="t"><b>' + esc(t.ar) + '</b><span class="ltr">' + esc(t.np) + "</span></span>" +
+    (t.custom ? '<span class="own">خاصة</span>' : "") + riskTag(t.risk) + "</button>";
 }
 function renderCats(){
   const wrap = $("#cats");
@@ -1876,7 +1564,8 @@ function renderSearch(){
   box.innerHTML = '<div class="card-h"><h2>نتائج البحث</h2><span class="hint">' + res.length + "</span></div>" +
     (res.length ? '<div class="items" style="border:1px solid var(--line);border-radius:10px;overflow:hidden">' + res.map(t =>
       itemRow(t).replace('<span class="t">', '<span class="t"><span class="code" style="align-self:flex-start">' + CAT[t.cat].code + "</span>")).join("") + "</div>"
-      : '<div class="empty">ما لقيت قالب مطابق. جرّب كلمة ثانية، أو اكتب ملاحظة حرة من الأسفل.</div>');
+      : '<div class="empty">ما لقيت ملاحظة مطابقة. جرّب كلمة ثانية، أو أضفها للقائمة مرة وحدة وتلقاها بعدين.' +
+        '<div style="margin-top:10px"><button type="button" class="btn sm primary" id="addFromSearch">+ أضف «' + esc(q.slice(0, 40)) + '» للقائمة</button></div></div>');
 }
 function toggleSel(id){
   const i = draft.sel.indexOf(id);
@@ -1932,8 +1621,9 @@ function renderDock(){
   if(document.activeElement !== ta) ta.value = d.text;
   $("#regenBtn").hidden = !(draft.edited && n);
   const arBox = $("#arSum"); arBox.hidden = !d.ar; arBox.textContent = d.ar;
+  $("#saveTplBtn").hidden = !(draft.edited && !n && hasText);
   const line = locLine(S.area, draft.loc);
-  $("#locPreview").innerHTML = S.showLoc ? (line ? "سطر الموقع في الرسالة: <b class=\"mono\">" + esc(line) + "</b>" : "بدون سطر موقع (اختر المنطقة من الأعلى)") : "سطر الموقع مخفي (من الإعدادات)";
+  $("#locPreview").innerHTML = line ? "سطر الموقع في الرسالة: <b class=\"mono\">" + esc(line) + "</b>" : "بدون سطر موقع (اختر المنطقة من الأعلى)";
   renderPhotos();
 }
 /* نفس القالب في نفس المنطقة خلال آخر 14 يوم ← اقتراح «متكررة» */
@@ -2040,7 +1730,8 @@ function commitDraft(){
   rec.items.forEach(id => USAGE[id] = (USAGE[id] || 0) + 1); store.set("hse2_usage", USAGE);
   queue({op:"upsertObs", obs: rec});
   const ph = photos.slice();
-  if(ph.length && S.photoUpload && S.url){
+  // الصور تنحفظ بالجهاز وترتفع لـ Drive مع الملاحظة (حتى لو انربط الشيت لاحقًا)
+  if(ph.length && S.photoUpload){
     ph.forEach((p, i) => {
       const key = rec.id + "_" + (i + 1);
       IDB.put(key, p.blob).then(() => {
@@ -2066,7 +1757,7 @@ function onCopySave(){
   const d = currentDraft();
   if(!d.text.trim()) return;
   const pre = recFromDraft();
-  const msg = buildMessage(d.text, d.ar, pre.area, pre.loc, null);
+  const msg = buildMessage(d.text, pre.area, pre.loc);
   copyText(msg).then(ok => { if(!ok) toast("ما قدرت أنسخ تلقائيًا — انسخ النص يدويًا"); });
   const rec = commitDraft();
   if(rec) afterSave(rec, "copy");
@@ -2075,7 +1766,7 @@ function onWhatsApp(){
   const d = currentDraft();
   if(!d.text.trim()) return;
   const pre = recFromDraft();
-  const msg = buildMessage(d.text, d.ar, pre.area, pre.loc, null);
+  const msg = buildMessage(d.text, pre.area, pre.loc);
   const files = photos.map((p, i) => new File([p.file || p.blob], (p.file && p.file.name) || ("photo_" + (i + 1) + ".jpg"), {type:(p.file && p.file.type) || "image/jpeg"}));
   copyText(msg);
   if(files.length && navigator.canShare && navigator.canShare({files})){
@@ -2145,7 +1836,7 @@ async function api(method, payload, ms){
     catch(e){ throw new Error(/<html|<!doctype/i.test(txt) ? "الرابط يرجّع صفحة بدل بيانات — تأكد إن النشر Who has access: Anyone" : "رد غير مفهوم من الشيت"); }
   }catch(e){
     if(e && e.name === "AbortError") throw new Error("انتهت مهلة الاتصال — الشبكة ضعيفة، بنعيد المحاولة تلقائيًا");
-    if(e instanceof TypeError) throw new Error("تعذر الوصول للشيت — تأكد من الرابط ومن إعداد النشر Anyone");
+    if(e instanceof TypeError) throw new Error("تعذر الوصول للشيت — الشبكة ضعيفة أو النشر مو على Anyone. بنعيد المحاولة تلقائيًا");
     throw e;
   }finally{ clearTimeout(timer); }
 }
@@ -2168,12 +1859,12 @@ async function verifyScript(){
     S.verifiedUrl = S.url; S.sheetUrl = r.sheetUrl || S.sheetUrl || ""; S.sheetName = r.sheetName || S.sheetName || ""; saveS();
     return true;
   }
-  if(r && (r.villas || r.templates)) throw new Error("الرابط شغّال لكن كود Apps Script قديم — حدّث الكود وانشر نسخة جديدة (الإعدادات ← طريقة الربط)");
-  throw new Error((r && r.error) || "الرابط يرد لكن مو بالشكل المتوقع");
+  if(r && (r.villas || r.templates || r.status)) throw new Error(OLD_CODE_MSG);
+  throw new Error((r && r.error) || "الشيت يرد لكن مو بالشكل المتوقع");
 }
 async function syncNow(manual){
   if(syncing) return;
-  if(!S.url){ renderSyncPill(); if(manual) toast("أضف رابط الشيت من الإعدادات أولًا"); return; }
+  if(!S.url){ renderSyncPill(); return; }
   if(!navigator.onLine){ setSync("wait", "بدون إنترنت — محفوظة على الجهاز"); return; }
   if(!OUTBOX.length){ setSync("ok", ""); if(manual) await pull(true); return; }
   syncing = true; setSync("busy", "جاري الرفع…");
@@ -2191,7 +1882,7 @@ async function syncNow(manual){
       if(payloads.length){
         const res = await api("POST", {ops: payloads, device: DEVICE, v: APP_VERSION}, batch[0].op === "photo" ? 90000 : 30000);
         if(!res || res.ok !== true){
-          if(res && res.legacy) throw new Error("كود Apps Script قديم — حدّثه من الإعدادات");
+          if(res && (res.legacy || res.status)) throw new Error(OLD_CODE_MSG);
           throw new Error((res && res.error) || "رفض الشيت الطلب");
         }
         results = res.results || [];
@@ -2246,10 +1937,20 @@ function mergeRemote(list){
   saveObs();
   return {added, updated};
 }
+let BUILTIN_KEYS = null;
+const npKey = s => String(s || "").toLowerCase().replace(/^(a|an|the)\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
+function isDuplicate(t){
+  if(!BUILTIN_KEYS) BUILTIN_KEYS = {ar: new Set(T.map(r => normAr(r[3]))), np: new Set(T.map(r => npKey(r[4])))};
+  const a = normAr(t.ar), n = npKey(t.np);
+  return BUILTIN_KEYS.ar.has(a) || (n && BUILTIN_KEYS.np.has(n)) || CUSTOM.some(c => c.id !== t.id && (normAr(c.ar) === a || (n && npKey(c.np) === n)));
+}
 function mergeTemplates(list){
   let changed = false;
+  const pending = new Set(OUTBOX.filter(o => o.op === "upsertTpl").map(o => o.tpl.id)); // تعديلاتك اللي ما وصلت للشيت لها الأولوية
   (list || []).forEach(t => {
-    if(!t || !t.id) return;
+    if(!t || !t.id || pending.has(t.id)) return;
+    /* ملاحظاتك الخاصة من الصفحة القديمة (تبويب Templates) — نتجاهل المكرر منها */
+    if(t.legacy && !CUSTOM.some(c => c.id === t.id) && isDuplicate(t)) return;
     const isBuiltin = T.some(r => r[0] === t.id);
     if(isBuiltin){
       const cur = OVER[t.id];
@@ -2262,45 +1963,47 @@ function mergeTemplates(list){
       else if(String(t.updatedAt || "") > String(CUSTOM[i].updatedAt || "")){ Object.assign(CUSTOM[i], {cat:t.cat, risk:t.risk, ar:t.ar, np:t.np, act:t.act, hz:t.hz, updatedAt:t.updatedAt}); changed = true; }
     }
   });
-  if(changed){ store.set("hse2_over", OVER); store.set("hse2_custom", CUSTOM); buildTemplates(); renderCats(); renderQuick(); renderTplLists(); }
+  if(changed){
+    store.set("hse2_over", OVER); store.set("hse2_custom", CUSTOM);
+    buildTemplates(); draft.sel = draft.sel.filter(id => TPL[id]); saveDraft();
+    renderCats(); renderQuick(); renderDock();
+  }
 }
 async function pull(manual, all){
-  if(!S.url || !navigator.onLine) { if(manual) toast(S.url ? "بدون إنترنت الآن" : "أضف رابط الشيت أولًا"); return; }
+  if(!S.url || !navigator.onLine) { if(manual && S.url) toast("بدون إنترنت الآن"); return; }
   try{
     if(manual) setSync("busy", "جاري السحب من الشيت…");
     const since = all ? "" : ymd(addDays(new Date(), -60));
     const res = await api("GET", {action:"list", since, limit: all ? 5000 : 1500}, 45000);
-    if(!res || res.ok !== true) throw new Error((res && res.error) || (res && !res.app ? "كود Apps Script قديم — حدّثه" : "تعذر السحب"));
+    if(!res || res.ok !== true) throw new Error((res && res.error) || (res && !res.app ? OLD_CODE_MSG : "تعذر السحب من الشيت"));
     const m = mergeRemote(res.observations);
     mergeTemplates(res.templates);
     lastPullAt = new Date().toISOString(); store.set("hse2_lastPull", lastPullAt);
     if(res.sheetUrl){ S.sheetUrl = res.sheetUrl; S.sheetName = res.sheetName || ""; saveS(); }
-    setSync(OUTBOX.length ? "wait" : "ok", "");
-    renderBadges(); if(currentTab === "log") renderLog(); if(currentTab === "rep") renderReports(); if(currentTab === "set") renderSettings();
-    if(manual) toast("تم التحديث من الشيت ✓ (" + m.added + " جديدة، " + m.updated + " محدثة)");
+    if(syncState.kind !== "err" || !OUTBOX.length) setSync(OUTBOX.length ? "wait" : "ok", "");
+    renderBadges(); if(currentTab === "log") renderLog(); if(currentTab === "rep") renderReports();
+    if(manual) toast("تم التحديث مع الشيت ✓" + (m.added || m.updated ? " (" + m.added + " جديدة، " + m.updated + " محدثة)" : ""), "فتح الشيت", openSheet, 5000);
   }catch(e){
     setSync("err", e.message);
-    if(manual) toast(e.message);
+    if(manual) toast(e.message, null, null, 6000);
   }
+}
+function openSheet(){
+  const url = S.sheetUrl || SHEET_LINK;
+  const w = window.open(url, "_blank");
+  if(w){ try{ w.opener = null; }catch(e){} } else location.href = url;
 }
 function setSync(kind, msg){ syncState = {kind, msg}; renderSyncPill(); }
 function renderSyncPill(){
   const p = $("#syncPill"), t = $("#syncTxt");
   let cls = "", txt = "";
-  if(!S.url){ cls = ""; txt = "غير مربوط"; }
+  if(!S.url){ cls = OUTBOX.length ? "wait" : ""; txt = OUTBOX.length ? OUTBOX.length + " محفوظة بالجوال" : "بانتظار الربط"; }
   else if(syncState.kind === "busy"){ cls = "busy"; txt = "مزامنة…"; }
-  else if(syncState.kind === "err"){ cls = "err"; txt = OUTBOX.length ? OUTBOX.length + " بانتظار الرفع" : "خطأ بالمزامنة"; }
+  else if(syncState.kind === "err"){ cls = "err"; txt = OUTBOX.length ? OUTBOX.length + " بانتظار الرفع" : (syncState.msg === OLD_CODE_MSG ? "الشيت يحتاج تحديث" : "خطأ بالمزامنة"); }
   else if(OUTBOX.length){ cls = "wait"; txt = OUTBOX.length + " بانتظار الرفع"; }
   else { cls = "ok"; txt = "متزامن"; }
   p.className = "pill " + cls; t.textContent = txt;
-  p.title = syncState.msg || "";
-  const box = $("#syncStatus");
-  if(box){
-    if(!S.url){ box.className = "status-box"; box.textContent = "غير مربوط — الملاحظات تُحفظ على هذا الجهاز فقط."; }
-    else if(syncState.kind === "err"){ box.className = "status-box err"; box.textContent = syncState.msg + (OUTBOX.length ? " · " + OUTBOX.length + " عملية محفوظة وبتنرفع تلقائيًا" : ""); }
-    else if(syncState.kind === "busy"){ box.className = "status-box"; box.textContent = syncState.msg || "جاري المزامنة…"; }
-    else { box.className = "status-box ok"; box.textContent = (OUTBOX.length ? OUTBOX.length + " عملية بانتظار الرفع" : "مربوط ومتزامن ✓") + (S.sheetName ? " · " + S.sheetName : "") + (lastPullAt ? " · آخر سحب " + new Date(lastPullAt).toLocaleTimeString("ar-u-nu-latn", {hour:"2-digit", minute:"2-digit"}) : ""); }
-  }
+  p.title = syncState.msg || (lastPullAt ? "آخر تحديث " + new Date(lastPullAt).toLocaleTimeString("ar-u-nu-latn", {hour:"2-digit", minute:"2-digit"}) : "");
 }
 
 /* ---------------- log view ---------------- */
@@ -2450,58 +2153,71 @@ function renderReports(){
   $("#copySummary").disabled = !list.length;
   const os = $("#openSheet"); os.hidden = false; os.href = S.sheetUrl || SHEET_LINK;
 }
-function csvOf(list){
-  const cols = ["Ref","Date","Time","Phase","Area","Location","Category","Risk","Observation","Arabic","Status","Closed on","Close-out note","Repeated","Photos","GPS","Device"];
-  const q = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
-  const rows = list.map(r => [r.id, r.date, r.time, r.phase, r.area, r.loc, catNamesOf(r), (RISK[r.risk] || RISK.M).en, r.text, r.ar, r.status === "closed" ? "Closed" : "Open", r.closedAt, r.closeNote, r.repeated ? "Yes" : "", (r.photoUrls || []).join(" "), r.gps ? "https://maps.google.com/?q=" + r.gps : "", r.device].map(q).join(","));
-  return "﻿" + cols.map(q).join(",") + "\n" + rows.join("\n");
-}
 
-/* ---------------- settings view ---------------- */
-function renderSettings(){
-  $("#urlInput").value = S.url || "";
-  $("#nameInput").value = S.name || "";
-  $$("#langSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === S.lang));
-  $$("#styleSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === S.style));
-  $$("#themeSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === S.theme));
-  $("#optLoc").setAttribute("aria-pressed", !!S.showLoc);
-  $("#optRef").setAttribute("aria-pressed", !!S.ref);
-  $("#optPhoto").setAttribute("aria-pressed", !!S.photoUpload);
-  $("#pendingInfo").textContent = OUTBOX.length ? OUTBOX.length + " عملية بانتظار الرفع" : "";
-  const os = $("#openSheet2"); os.hidden = false; os.href = S.sheetUrl || SHEET_LINK;
-  $$(".sheet-link").forEach(a => a.href = S.sheetUrl || SHEET_LINK);
-  if(!$("#tplCat").options.length) $("#tplCat").innerHTML = CATS.filter(c => c.k !== "good").map(c => '<option value="' + c.k + '">' + esc(c.ar) + "</option>").join("");
-  if(!$("#tplHz").children.length) $("#tplHz").innerHTML = ["fall", "fo", "trip", "slip", "elec", "fire", "struck", "crush", "coll", "collapse", "env", "health", "heat", "chem", "access"].map(h =>
-    '<button type="button" class="toggle" data-hz="' + h + '" aria-pressed="false"><span class="box">✓</span>' + HZ[h][1] + "</button>").join("");
-  renderTplLists();
-  renderSyncPill();
-  if(!S.url && !renderSettings.opened){ $("#howto").open = true; renderSettings.opened = true; }
-  $("#verInfo").textContent = "الإصدار " + APP_VERSION + " · الجهاز " + DEVICE + " · " + OBS.length + " ملاحظة محفوظة على الجهاز";
+/* ---------------- أضف ملاحظة خاصة للقائمة ---------------- */
+function tplPreview(cat, risk, np, act){
+  if(!np) return "";
+  const t = {id:"_new", cat, risk: cat === "good" ? "G" : risk, ar:"", np, act, hz: hzList(CAT[cat].hz)};
+  return compose([t], {}).en;
 }
-function renderTplLists(){
-  const cw = $("#customList"); if(!cw) return;
-  cw.innerHTML = CUSTOM.length ? CUSTOM.map(c => '<div class="tpl-row"><span class="code">' + (CAT[c.cat] || CAT.cond).code + '</span><span class="t">' + esc(c.ar) + '<span class="ltr">' + esc(c.np) + '</span></span><button type="button" class="btn sm ghost" data-tedit="' + c.id + '">تعديل</button><button type="button" class="btn sm danger" data-tdel="' + c.id + '">حذف</button></div>').join("")
-    : '<div class="hint">ما أضفت قوالب خاصة بعد.</div>';
-  const ow = $("#overList");
-  const ids = Object.keys(OVER).filter(id => TPL[id]);
-  ow.innerHTML = ids.length ? ids.map(id => '<div class="tpl-row"><span class="code">' + CAT[TPL[id].cat].code + '</span><span class="t">' + esc(TPL[id].ar) + '<span class="ltr">' + esc(TPL[id].np) + '</span></span><button type="button" class="btn sm" data-treset="' + id + '">استعادة الأصل</button></div>').join("")
-    : '<div class="hint">ما عدّلت أي قالب أساسي.</div>';
+function openAddOwn(prefill){
+  prefill = prefill || {};
+  const cat0 = CAT[prefill.cat] ? prefill.cat : (openCats.size === 1 ? Array.from(openCats)[0] : "cond");
+  const m = $("#modalIn");
+  m.innerHTML = "<h3>أضف ملاحظة خاصة للقائمة</h3>" +
+    '<div class="set-row"><label for="ao-cat">التصنيف</label><select class="field" id="ao-cat">' +
+      CATS.map(c => '<option value="' + c.k + '"' + (c.k === cat0 ? " selected" : "") + ">" + esc(c.ar) + "</option>").join("") + "</select></div>" +
+    '<div class="set-row"><label for="ao-ar">وصفها بالعربي (اللي تشوفه بالقائمة)</label><input class="field" id="ao-ar" autocomplete="off" placeholder="مثال: سلم خشبي مصنّع محليًا" value="' + esc(prefill.ar || "") + '"></div>' +
+    '<div class="set-row"><label for="ao-np">بالإنجليزي — يجي بعد كلمة Observed</label><textarea class="field ltr" id="ao-np" rows="2" placeholder="e.g. a locally made wooden ladder in use">' + esc(prefill.np || "") + "</textarea></div>" +
+    '<div class="set-row"><label for="ao-act">الإجراء المطلوب (اختياري)</label><textarea class="field ltr" id="ao-act" rows="2" placeholder="e.g. Remove it from site and provide a certified ladder."></textarea></div>' +
+    '<div class="row" id="ao-risk-row"><span class="eyebrow">الخطورة</span><div class="seg risk" id="ao-risk">' +
+      ["H", "M", "L"].map(v => '<button type="button" data-v="' + v + '" aria-pressed="' + (v === (prefill.risk || "M")) + '">' + RISK[v].ar + "</button>").join("") + "</div></div>" +
+    '<div class="ao-prev" id="ao-prev"></div>' +
+    '<div class="row"><button type="button" class="btn primary" id="ao-save">إضافة للقائمة</button><button type="button" class="btn" id="ao-cancel">إلغاء</button></div>';
+  $("#modal").hidden = false;
+  const risk = () => { const b = $("#ao-risk button[aria-pressed=true]"); return b ? b.dataset.v : "M"; };
+  const upd = () => {
+    const cat = $("#ao-cat").value;
+    $("#ao-risk-row").hidden = cat === "good";
+    $("#ao-prev").textContent = tplPreview(cat, risk(), npNorm($("#ao-np").value), actNorm($("#ao-act").value));
+  };
+  $("#ao-risk").onclick = e => { const b = e.target.closest("button"); if(!b) return; $$("#ao-risk button").forEach(x => x.setAttribute("aria-pressed", x === b)); upd(); };
+  $("#ao-cat").onchange = upd; $("#ao-np").oninput = upd; $("#ao-act").oninput = upd;
+  $("#ao-cancel").onclick = closeModal;
+  $("#ao-save").onclick = () => {
+    const cat = $("#ao-cat").value, ar = $("#ao-ar").value.trim(), np = npNorm($("#ao-np").value), act = actNorm($("#ao-act").value);
+    if(!ar){ toast("اكتب وصفها بالعربي"); $("#ao-ar").focus(); return; }
+    if(!np){ toast("اكتب الوصف بالإنجليزي — هو اللي يطلع بالرسالة"); $("#ao-np").focus(); return; }
+    const c = {id:"c-" + rnd(6), cat, risk: cat === "good" ? "G" : risk(), ar, np, act, hz: CAT[cat].hz || "", updatedAt: new Date().toISOString()};
+    CUSTOM.push(c); store.set("hse2_custom", CUSTOM); queue({op:"upsertTpl", tpl: Object.assign({}, c)});
+    buildTemplates(); openCats.add(cat); renderCats(); renderQuick();
+    closeModal();
+    if($("#q").value.trim()){ $("#q").value = ""; renderSearch(); }
+    if(prefill.select !== false){ toggleSel(c.id); }
+    const el = $('.item[data-id="' + c.id + '"]'); if(el) el.scrollIntoView({block:"center", behavior:"smooth"});
+    toast("تمت إضافتها لـ «" + CAT[cat].ar + "» ✓ وبتوصل لكل أجهزتك عبر الشيت");
+  };
+  upd();
+  setTimeout(() => { const f = prefill.ar ? (prefill.np ? $("#ao-act") : $("#ao-np")) : $("#ao-ar"); if(f) f.focus(); }, 60);
 }
 function tplEditor(id){
   const t = TPL[id]; if(!t) return;
   const m = $("#modalIn");
-  m.innerHTML = '<h3>تعديل القالب <span class="code">' + CAT[t.cat].code + "</span></h3>" +
+  m.innerHTML = '<h3>تعديل الملاحظة <span class="code">' + CAT[t.cat].code + "</span></h3>" +
     '<div class="set-row"><label for="te-ar">الوصف بالعربي (اللي تشوفه بالقائمة)</label><input class="field" id="te-ar" value="' + esc(t.ar) + '"></div>' +
     '<div class="set-row"><label for="te-np">الوصف بالإنجليزي (يجي بعد كلمة Observed)</label><textarea class="field ltr" id="te-np" rows="3">' + esc(t.np) + "</textarea></div>" +
     '<div class="set-row"><label for="te-act">الإجراء التصحيحي (English)</label><textarea class="field ltr" id="te-act" rows="3">' + esc(t.act) + "</textarea></div>" +
-    '<div class="row"><span class="eyebrow">الخطورة</span><div class="seg risk" id="te-risk">' + ["H", "M", "L"].map(v => '<button type="button" data-v="' + v + '" aria-pressed="' + (t.risk === v) + '">' + RISK[v].ar + "</button>").join("") + "</div></div>" +
-    '<div class="hint">التعديل يتطبّق على كل الملاحظات الجاية' + (S.url ? " ويتزامن مع أجهزتك عبر الشيت" : "") + ".</div>" +
-    '<div class="row"><button type="button" class="btn primary" id="te-save">حفظ</button><button type="button" class="btn" id="te-cancel">إلغاء</button>' + (t.builtin && t.edited ? '<span class="grow"></span><button type="button" class="btn" id="te-reset">استعادة الأصل</button>' : "") + "</div>";
+    (t.risk === "G" ? "" : '<div class="row"><span class="eyebrow">الخطورة</span><div class="seg risk" id="te-risk">' + ["H", "M", "L"].map(v => '<button type="button" data-v="' + v + '" aria-pressed="' + (t.risk === v) + '">' + RISK[v].ar + "</button>").join("") + "</div></div>") +
+    '<div class="hint">التعديل يتطبّق على الملاحظات الجاية ويوصل لكل أجهزتك عبر الشيت.</div>' +
+    '<div class="row"><button type="button" class="btn primary" id="te-save">حفظ</button><button type="button" class="btn" id="te-cancel">إلغاء</button><span class="grow"></span>' +
+      (t.builtin && t.edited ? '<button type="button" class="btn" id="te-reset">استعادة الأصل</button>' : "") +
+      (t.custom ? '<button type="button" class="btn danger" id="te-del">حذف من القائمة</button>' : "") + "</div>";
   $("#modal").hidden = false;
-  $("#te-risk").onclick = e => { const b = e.target.closest("button"); if(!b) return; $$("#te-risk button").forEach(x => x.setAttribute("aria-pressed", x === b)); };
+  const rk = $("#te-risk");
+  if(rk) rk.onclick = e => { const b = e.target.closest("button"); if(!b) return; $$("#te-risk button").forEach(x => x.setAttribute("aria-pressed", x === b)); };
   $("#te-cancel").onclick = closeModal;
   $("#te-save").onclick = () => {
-    const ar = $("#te-ar").value.trim(), np = $("#te-np").value.trim().replace(/\.$/, ""), act = $("#te-act").value.trim();
+    const ar = $("#te-ar").value.trim(), np = npNorm($("#te-np").value), act = actNorm($("#te-act").value);
     const rb = $("#te-risk button[aria-pressed=true]"); const risk = rb ? rb.dataset.v : t.risk;
     if(!ar || !np){ toast("اكتب الوصف بالعربي والإنجليزي"); return; }
     const now = new Date().toISOString();
@@ -2512,22 +2228,25 @@ function tplEditor(id){
       OVER[id] = {ar, np, act, risk, hz: t.hz.join(" "), updatedAt: now}; store.set("hse2_over", OVER);
       queue({op:"upsertTpl", tpl: Object.assign({id, cat:t.cat}, OVER[id])});
     }
-    buildTemplates(); renderCats(); renderQuick(); renderDock(); renderTplLists(); closeModal(); toast("تم حفظ القالب ✓");
+    buildTemplates(); renderCats(); renderQuick(); renderDock(); closeModal(); toast("تم حفظ التعديل ✓");
   };
   const rs = $("#te-reset");
   if(rs) rs.onclick = () => { resetOverride(id); closeModal(); };
+  const del = $("#te-del");
+  if(del) del.onclick = () => {
+    if(!del.dataset.armed){ del.dataset.armed = "1"; del.textContent = "اضغط مرة ثانية للتأكيد"; return; }
+    CUSTOM = CUSTOM.filter(c => c.id !== id); store.set("hse2_custom", CUSTOM);
+    queue({op:"upsertTpl", tpl:{id, cat:t.cat, deleted:true, updatedAt: new Date().toISOString()}});
+    draft.sel = draft.sel.filter(x => x !== id); if(!draft.sel.length && !draft.edited) draft.risk = null; saveDraft();
+    buildTemplates(); renderCats(); renderQuick(); refreshSelectionUI(); renderDock(); closeModal(); toast("تم حذفها من القائمة");
+  };
 }
 function resetOverride(id){
   delete OVER[id]; store.set("hse2_over", OVER);
   queue({op:"upsertTpl", tpl:{id, cat: TPL[id] ? TPL[id].cat : "", deleted:true, updatedAt: new Date().toISOString()}});
-  buildTemplates(); renderCats(); renderQuick(); renderDock(); renderTplLists(); toast("رجع القالب لصيغته الأصلية");
+  buildTemplates(); renderCats(); renderQuick(); renderDock(); toast("رجعت الملاحظة لصيغتها الأصلية");
 }
 function closeModal(){ $("#modal").hidden = true; $("#modalIn").innerHTML = ""; }
-function setupLink(){
-  if(!S.url || !/^https?:$/.test(location.protocol)) return "";
-  const b = btoa(unescape(encodeURIComponent(S.url))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  return location.origin + location.pathname + "#setup=" + b;
-}
 
 /* ---------------- tabs, theme, badges ---------------- */
 let currentTab = "new";
@@ -2535,13 +2254,12 @@ function showTab(t){
   if(t !== "new" && dockOpen) setDock(false);
   currentTab = t;
   $$(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
-  ["new", "log", "rep", "set"].forEach(k => $("#view-" + k).hidden = k !== t);
+  ["new", "log", "rep"].forEach(k => $("#view-" + k).hidden = k !== t);
   $("#dock").hidden = t !== "new";
   document.body.classList.toggle("no-dock", t !== "new");
   document.body.style.paddingBottom = t === "new" ? "" : "calc(24px + env(safe-area-inset-bottom,0px))";
   if(t === "log") renderLog();
   if(t === "rep") renderReports();
-  if(t === "set") renderSettings();
   window.scrollTo(0, 0);
 }
 function applyTheme(){
@@ -2558,8 +2276,12 @@ function renderBadges(){
 /* ---------------- events ---------------- */
 function bind(){
   $$(".tab").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
-  $("#syncPill").addEventListener("click", () => { showTab("set"); setTimeout(() => { const s = $("#sec-sync"); s && s.scrollIntoView({behavior:"smooth"}); }, 50); });
-  $("#themeBtn").addEventListener("click", () => { S.theme = S.theme === "auto" ? "dark" : S.theme === "dark" ? "light" : "auto"; saveS(); applyTheme(); toast(S.theme === "auto" ? "المظهر: حسب الجهاز" : S.theme === "dark" ? "المظهر: ليلي" : "المظهر: نهاري (للشمس)"); if(currentTab === "set") renderSettings(); });
+  $("#syncPill").addEventListener("click", () => {
+    if(!S.url){ toast("الشيت غير مربوط بعد — ملاحظاتك محفوظة بالجوال وبترتفع تلقائيًا أول ما ينربط"); return; }
+    if(!navigator.onLine){ toast("بدون إنترنت الآن — بنرفع تلقائيًا أول ما يرجع"); return; }
+    syncNow(false).then(() => pull(true));
+  });
+  $("#themeBtn").addEventListener("click", () => { S.theme = S.theme === "auto" ? "dark" : S.theme === "dark" ? "light" : "auto"; saveS(); applyTheme(); toast(S.theme === "auto" ? "المظهر: حسب الجهاز" : S.theme === "dark" ? "المظهر: ليلي" : "المظهر: نهاري (للشمس)"); });
 
   /* area */
   $("#phaseSeg").addEventListener("click", e => { const b = e.target.closest("button[data-p]"); if(b) setPhase(b.dataset.p); });
@@ -2620,7 +2342,7 @@ function bind(){
     const a = b.dataset.act;
     if(a === "close") setStatus(id, "closed");
     else if(a === "reopen") setStatus(id, "open");
-    else if(a === "copy") copyText(buildMessage(r.text, r.ar, r.area, r.loc, r.id)).then(() => toast("تم النسخ ✓"));
+    else if(a === "copy") copyText(buildMessage(r.text, r.area, r.loc)).then(() => toast("تم النسخ ✓"));
     else if(a === "remind") copyText(remindText([r])).then(() => toast("تم نسخ التذكير ✓"));
     else if(a === "edit") openEditor(id);
     else if(a === "ed-cancel") card.querySelector(".rec-edit").remove();
@@ -2642,119 +2364,26 @@ function bind(){
   $("#repPhase").addEventListener("click", e => { const b = e.target.closest("button"); if(!b) return; repF.phase = b.dataset.v; renderReports(); });
   $("#copySummary").addEventListener("click", () => { const l = repList(); if(l.length) copyText(summaryText(l)).then(() => toast("تم نسخ الملخص ✓")); });
   $("#copyRemind2").addEventListener("click", () => { const t = remindText(repList()); if(t) copyText(t).then(() => toast("تم نسخ التذكير ✓")); else toast("ما فيه ملاحظات مفتوحة بهذه الفترة"); });
-  $("#csvBtn").addEventListener("click", () => { const l = repList(); download("SEDRA_HSE_" + ymd(new Date()) + ".csv", csvOf(l.length ? l : OBS), "text/csv;charset=utf-8"); });
-  $("#pullBtn2").addEventListener("click", () => pull(true));
 
-  /* settings */
-  $("#urlSave").addEventListener("click", () => {
-    const v = $("#urlInput").value.trim();
-    if(v && /docs\.google\.com\/spreadsheets/.test(v)){ toast("هذا رابط الشيت نفسه — نحتاج رابط Web App من Apps Script (آخره ‎/exec)"); return; }
-    if(v && !validUrl(v)){ toast("الرابط لازم يبدأ بـ https://script.google.com/macros/s/ وينتهي بـ ‎/exec"); return; }
-    if(v !== S.url) S.verifiedUrl = "";
-    S.url = v; saveS(); renderSyncPill();
-    if(v){ testConn(); } else toast("تم إلغاء الربط");
+  /* ملاحظة خاصة: من الزر تحت التصنيفات، أو من بحث ما لقى نتيجة، أو من نص كتبته بنفسك */
+  $("#addOwnBtn").addEventListener("click", () => openAddOwn({}));
+  $("#searchResults").addEventListener("click", e => { if(e.target.closest("#addFromSearch")) openAddOwn({ar: $("#q").value.trim()}); });
+  $("#saveTplBtn").addEventListener("click", () => {
+    const first = String(draft.text || "").trim().split(/\n/)[0].replace(/,\s*creating\b.*$/i, "");
+    openAddOwn({np: npNorm(first.split(/\.\s/)[0]), risk: draft.risk || "M"});
   });
-  $("#urlTest").addEventListener("click", testConn);
-  $("#syncBtn").addEventListener("click", () => syncNow(true));
-  $("#pullBtn").addEventListener("click", () => pull(true));
-  $("#pullAllBtn").addEventListener("click", () => pull(true, true));
-  $("#copyGas").addEventListener("click", () => copyText($("#gasCode").textContent.trim()).then(() => toast("تم نسخ كود Apps Script ✓ — الصقه في المحرر")));
-  $("#gasPreview").textContent = $("#gasCode").textContent.trim();
-  $("#copySetup").addEventListener("click", () => { const l = setupLink(); if(!l){ toast(S.url ? "رابط التجهيز يشتغل لما تكون الصفحة مرفوعة على رابط (مو ملف محلي)" : "احفظ رابط Web App أولًا"); return; } copyText(l).then(() => toast("تم نسخ رابط التجهيز — افتحه بالجهاز الثاني")); });
-  $("#nameInput").addEventListener("change", e => { S.name = e.target.value.trim(); saveS(); });
-  $("#langSeg").addEventListener("click", e => { const b = e.target.closest("button"); if(!b) return; S.lang = b.dataset.v; saveS(); renderSettings(); renderDock(); });
-  $("#styleSeg").addEventListener("click", e => { const b = e.target.closest("button"); if(!b) return; S.style = b.dataset.v; saveS(); renderSettings(); renderDock(); });
-  $("#themeSeg").addEventListener("click", e => { const b = e.target.closest("button"); if(!b) return; S.theme = b.dataset.v; saveS(); applyTheme(); renderSettings(); });
-  [["#optLoc", "showLoc"], ["#optRef", "ref"], ["#optPhoto", "photoUpload"]].forEach(([sel, key]) => $(sel).addEventListener("click", () => { S[key] = !S[key]; saveS(); renderSettings(); renderDock(); }));
-  $("#tplHz").addEventListener("click", e => { const b = e.target.closest("[data-hz]"); if(b) b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") !== "true"); });
-  $("#tplRisk").addEventListener("click", e => { const b = e.target.closest("button"); if(!b) return; $$("#tplRisk button").forEach(x => x.setAttribute("aria-pressed", x === b)); });
-  $("#tplAdd").addEventListener("click", () => {
-    const ar = $("#tplAr").value.trim(), np = $("#tplNp").value.trim().replace(/\.$/, ""), act = $("#tplAct").value.trim();
-    if(!ar || !np){ toast("اكتب الوصف بالعربي والإنجليزي"); return; }
-    const rb = $("#tplRisk button[aria-pressed=true]");
-    const c = {id:"c-" + rnd(6), cat: $("#tplCat").value, risk: rb ? rb.dataset.v : "M", ar,
-      np: np.charAt(0).toLowerCase() + np.slice(1), act, hz: $$("#tplHz [aria-pressed=true]").map(b => b.dataset.hz).join(" "), updatedAt: new Date().toISOString()};
-    CUSTOM.push(c); store.set("hse2_custom", CUSTOM); queue({op:"upsertTpl", tpl: Object.assign({}, c)});
-    buildTemplates(); renderCats(); renderTplLists();
-    $("#tplAr").value = $("#tplNp").value = $("#tplAct").value = ""; $$("#tplHz [aria-pressed=true]").forEach(b => b.setAttribute("aria-pressed", "false"));
-    toast("تمت إضافة القالب ✓ تلقاه في تصنيف «" + CAT[c.cat].ar + "»");
-  });
-  document.addEventListener("click", e => {
-    const d = e.target.closest("[data-tdel]");
-    if(d){
-      const id = d.dataset.tdel;
-      if(!d.dataset.armed){ d.dataset.armed = "1"; d.textContent = "تأكيد؟"; setTimeout(() => { if(d.isConnected){ delete d.dataset.armed; d.textContent = "حذف"; } }, 3000); return; }
-      CUSTOM = CUSTOM.filter(c => c.id !== id); store.set("hse2_custom", CUSTOM);
-      queue({op:"upsertTpl", tpl:{id, deleted:true, updatedAt: new Date().toISOString()}});
-      draft.sel = draft.sel.filter(x => x !== id); saveDraft();
-      buildTemplates(); renderCats(); renderTplLists(); renderDock(); toast("تم حذف القالب");
-      return;
-    }
-    const te = e.target.closest("[data-tedit]"); if(te){ tplEditor(te.dataset.tedit); return; }
-    const tr = e.target.closest("[data-treset]"); if(tr){ resetOverride(tr.dataset.treset); }
-  });
-  $("#exportBtn").addEventListener("click", () => {
-    const data = {app:"sedra-hse", version: APP_VERSION, exportedAt: new Date().toISOString(), settings: S, observations: OBS, custom: CUSTOM, overrides: OVER, usage: USAGE};
-    download("SEDRA_HSE_backup_" + ymd(new Date()) + ".json", JSON.stringify(data, null, 1), "application/json");
-  });
-  $("#importBtn").addEventListener("click", () => $("#importInput").click());
-  $("#importInput").addEventListener("change", e => {
-    const f = e.target.files && e.target.files[0]; if(!f) return;
-    const fr = new FileReader();
-    fr.onload = () => {
-      try{
-        const d = JSON.parse(fr.result);
-        if(d.app !== "sedra-hse") throw new Error("ملف غير معروف");
-        // الملاحظات المستوردة تنضاف للجهاز وتنرفع للشيت (الشيت يتجاهل المكرر حسب الرقم المرجعي)
-        const m = {added: 0};
-        (d.observations || []).forEach(r => {
-          if(!r || !r.id || findRec(r.id)) return;
-          const rec = Object.assign({items:[], photoUrls:[], photos:0}, r);
-          if(!Array.isArray(rec.cats) || !rec.cats.length) rec.cats = deriveCats(rec);
-          rec.synced = false; OBS.push(rec); m.added++;
-          if(S.url) queue({op:"upsertObs", obs: rec});
-        });
-        OBS.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-        (d.custom || []).forEach(c => { if(!CUSTOM.some(x => x.id === c.id)) CUSTOM.push(c); });
-        Object.keys(d.overrides || {}).forEach(k => { if(!OVER[k]) OVER[k] = d.overrides[k]; });
-        store.set("hse2_custom", CUSTOM); store.set("hse2_over", OVER); saveObs();
-        buildTemplates(); renderCats(); renderSettings(); renderBadges();
-        toast("تم الاستيراد ✓ (" + m.added + " ملاحظة جديدة)");
-      }catch(er){ toast("تعذر الاستيراد: " + er.message); }
-      e.target.value = "";
-    };
-    fr.readAsText(f);
-  });
-  $("#wipeBtn").addEventListener("click", e => {
-    const b = e.currentTarget;
-    if(!b.dataset.armed){ b.dataset.armed = "1"; b.textContent = "متأكد؟ اضغط مرة ثانية"; setTimeout(() => { delete b.dataset.armed; b.textContent = "مسح بيانات الجهاز"; }, 4000); return; }
-    ["hse2_obs", "hse2_outbox", "hse2_usage", "hse2_draft", "hse2_syncedIds", "hse2_lastPull"].forEach(k => store.del(k));
-    OBS = []; OUTBOX = []; USAGE = {}; SYNCED_IDS.clear(); clearDraft(true); renderSettings(); renderBadges(); toast("تم مسح بيانات الجهاز (الشيت ما تأثر)");
-  });
-
   $("#modal").addEventListener("click", e => { if(e.target.id === "modal") closeModal(); });
+  document.addEventListener("keydown", e => { if(e.key === "Escape" && !$("#modal").hidden) closeModal(); });
   window.addEventListener("online", () => { renderSyncPill(); scheduleSync(800); });
   window.addEventListener("offline", () => setSync("wait", "بدون إنترنت — محفوظة على الجهاز"));
-  document.addEventListener("visibilitychange", () => { if(!document.hidden){ renderBadges(); if(OUTBOX.length) scheduleSync(500); } });
+  document.addEventListener("visibilitychange", () => {
+    if(document.hidden) return;
+    renderBadges();
+    if(OUTBOX.length) scheduleSync(500);
+    if(S.url && navigator.onLine && (!lastPullAt || Date.now() - Date.parse(lastPullAt) > 2 * 60 * 1000)) pull(false);
+  });
   if(window.matchMedia){ try{ matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme); }catch(e){} }
 }
-async function testConn(){
-  if(!S.url){ toast("أضف الرابط أولًا"); return; }
-  const box = $("#syncStatus"); box.className = "status-box"; box.textContent = "جاري اختبار الاتصال…";
-  try{
-    const r = await api("GET", {action:"ping"}, 25000);
-    if(r && r.ok && r.app === "sedra-hse"){
-      S.verifiedUrl = S.url; S.sheetUrl = r.sheetUrl || ""; S.sheetName = r.sheetName || ""; saveS();
-      setSync("ok", ""); toast("الربط شغّال ✓ " + (r.sheetName ? "(" + r.sheetName + ")" : ""));
-      renderSettings(); syncNow(false); pull(false);
-    }else if(r && (r.villas || r.templates)){
-      setSync("err", "الرابط شغّال لكن كود Apps Script قديم — انسخ الكود الجديد من الأسفل وانشر نسخة جديدة");
-    }else{
-      setSync("err", (r && r.error) || "الرابط يرد لكن مو بالشكل المتوقع");
-    }
-  }catch(e){ setSync("err", e.message); }
-}
-
 /* ---------------- init ---------------- */
 function init(){
   buildTemplates();
@@ -2764,6 +2393,7 @@ function init(){
   renderArea(); renderQuick(); renderCats(); renderDock(); renderBadges(); renderSyncPill();
   bind();
   if(S.url && navigator.onLine){ setTimeout(() => { syncNow(false); pull(false); }, 600); }
+  setInterval(() => { if(!document.hidden && S.url && navigator.onLine){ if(OUTBOX.length) syncNow(false); pull(false); } }, 5 * 60 * 1000);
   if("serviceWorker" in navigator && location.protocol === "https:"){ navigator.serviceWorker.register("sw.js").catch(() => {}); }
 }
 init();
