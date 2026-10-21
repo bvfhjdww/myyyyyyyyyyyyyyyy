@@ -373,6 +373,8 @@ body.no-dock .toast{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
   *{animation:none!important;transition:none!important}
 }
 
+
+<style>#flagRow{display:none!important}</style>
 </style>
 </head>
 <body>
@@ -1045,7 +1047,7 @@ const CATS = [
    actAr:"يجب إيقاف الرفع حتى توفر خطة الرفع والتصريح ومشرف رفع مؤهل وتسييج المنطقة."},
   {k:"pre", code:"PRE", hz:"struck crush", ar:"المسبق الصب: التركيب والتخزين", en:"Precast Erection & Storage",
    actAr:"يجب تطبيق طريقة التركيب المعتمدة: منطقة استبعاد، مشرف رفع، دعامات مؤقتة وحماية من السقوط."},
-  {k:"mewp", code:"MEWP", hz:"struck coll", ar:"المان لفت والمعدات المتحركة", en:"MEWPs & Mobile Plant",
+  {k:"mewp", code:"MEWP", hz:"struck coll", ar:"المان لفت والمعدات المتحركة", en:"Manlifts & Mobile Equipment",
    actAr:"يجب تأمين المعدة بالحواجز والمراقب ومشغل مؤهل ووثائق سارية."},
   {k:"scaf", code:"SCF", hz:"fall collapse", ar:"السقالات", en:"Scaffolding",
    actAr:"يجب إيقاف استخدام السقالة حتى فحصها واعتمادها من شخص مختص وتعليق البطاقة الخضراء."},
@@ -1620,8 +1622,8 @@ const SYN = [
   ["بلوك","بلك","طابوق","block","blockwork"]
 ];
 
-/* صيغ بديلة لكل ملاحظة — VAR[id] = [[أوصاف بديلة تجي بعد Observed], [إجراءات بديلة]]
-   الصيغة الأصلية في templates.js تبقى رقم 0 وهذي تنضاف لها، والصفحة تختار وحدة مختلفة كل مرة */
+/* صيغ بديلة لكل ملاحظة — VAR[id] = [[أوصاف بديلة], [إجراءات بديلة]]
+   الملاحظات تُصاغ بصياغة استشارية مباشرة ومتنوعة، بدون توصيات في النص النهائي. */
 const VAR = {};
 Object.assign(VAR, {
 /* ---------- الفتحات والشبابيك والحواف ---------- */
@@ -1975,15 +1977,15 @@ pre12: [["debris and loose materials left on the hollow-core slab", "loose items
         ["Clean the slab and keep materials back from the edges.", "Remove the loose materials from the slab."]],
 
 /* ---------- المان لفت والمعدات المتحركة ---------- */
-mwp01: [["a MEWP working with no barricades underneath", "an unbarricaded area below an operating manlift"],
+mwp01: [["a manlift operating without proper barricading below", "an operating manlift with no barricading around the area", "a manlift working in an area without proper barricading", "an unbarricaded work zone around an operating manlift"],
         ["Barricade the area under and around the manlift.", "Set up barriers below the MEWP."]],
-mwp02: [["a worker in the MEWP basket not tied off", "a worker in the manlift without a clipped harness"],
+mwp02: [["a worker in the manlift basket without a full body harness", "a manlift occupant without a full body harness connected to the anchor point", "a worker inside the manlift basket without fall protection", "a worker in the manlift basket not secured with a full body harness"],
         ["Stop the work until the worker's harness is clipped to the basket anchor point.", "Stop and make sure everyone in the basket is tied off."]],
-mwp03: [["a MEWP operator with an expired TUV card", "an operator with no valid third-party certification"],
+mwp03: [["a manlift operator with an expired TUV card", "a manlift being operated without valid third-party certification", "a manlift operator without valid competency documentation", "an operator using a manlift with expired certification"],
         ["Stop the operator until a valid TUV certificate is provided.", "Stop the operation and replace the operator with a certified one."]],
-mwp04: [["MEWPs parked in undesignated locations", "manlifts left outside the parking area"],
+mwp04: [["manlifts parked outside the designated area", "a manlift left in an unauthorized parking location", "manlifts positioned in an unsuitable parking area", "a parked manlift obstructing a non-designated area"],
         ["Park the manlifts in the designated area and keep entrances clear.", "Relocate the MEWPs to their parking area."]],
-mwp05: [["a MEWP manoeuvring too close to the building", "a manlift with insufficient clearance from the structure"],
+mwp05: [["a manlift operating too close to the building", "a manlift manoeuvring with insufficient clearance from the structure", "a manlift positioned too close to the building facade", "a manlift working without adequate clearance from the structure"],
         ["Keep a safe clearance and use a spotter while manoeuvring.", "Assign a spotter and maintain clearance from the structure."]],
 mwp06: [["a worker inside the excavator's swing radius", "a worker standing close to an operating excavator"],
         ["Stop the excavator, clear the swing area and assign a flagman.", "Stop the machine and keep workers out of the swing radius."]],
@@ -2001,7 +2003,7 @@ mwp12: [["no completed pre-use checklist for the equipment", "the daily equipmen
         ["Fill in and sign the checklist before operation.", "Complete the daily pre-use inspection before starting."]],
 mwp13: [["equipment on site with expired registration/insurance", "plant operating with expired documents"],
         ["Take the equipment off site until its insurance and registration are renewed.", "Stop the equipment until valid documents are provided."]],
-mwp14: [["several manlifts working too close to each other", "MEWPs operating with no safe separation"],
+mwp14: [["several manlifts operating too close to each other", "manlifts working without adequate separation", "two or more manlifts positioned with insufficient clearance", "manlifts operating in close proximity without safe separation"],
         ["Separate the machines and assign a spotter to coordinate them.", "Space the manlifts out and coordinate their movement."]],
 mwp15: [["a worker raised in a loader bucket", "workers lifted on forklift forks"],
         ["Stop immediately; only an approved MEWP may be used to lift people.", "Stop the practice and provide a MEWP."]],
@@ -2011,9 +2013,9 @@ mwp17: [["an operator working without the seat belt fastened", "the seat belt no
         ["Make sure the operator wears the seat belt at all times.", "Brief the operator to keep the seat belt on."]],
 mwp18: [["plant working near overhead power lines", "equipment operating under live overhead lines"],
         ["Stop the work; keep the safe distance with goalposts and a spotter.", "Stop and set up goalposts and a spotter before continuing."]],
-mwp19: [["a worker exiting the MEWP basket at height", "a worker stepping from the manlift onto the building"],
+mwp19: [["a worker climbing from the manlift basket onto the building", "a worker stepping from the manlift basket to the structure at height", "a worker exiting the manlift basket onto the building", "a worker transferring from the manlift to the structure at height"],
         ["Stop it; workers must exit only at ground level or via an approved access.", "Stop the practice and brief the crew."]],
-mwp20: [["an overloaded MEWP basket", "too many workers/materials in the manlift basket"],
+mwp20: [["an overloaded manlift basket", "excessive workers or materials inside the manlift basket", "a manlift basket loaded beyond its safe capacity", "too many occupants or materials in the manlift basket"],
         ["Keep the basket within its rated capacity.", "Reduce the load in the basket to its safe working limit."]],
 mwp21: [["materials hung from the excavator bucket", "an excavator being used as a crane"],
         ["Stop it; use rated lifting equipment and certified gear only.", "Stop and use a crane or rated lifting equipment."]],
@@ -2506,7 +2508,7 @@ function normAr(s){
     .replace(/[أإآٱ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/ؤ/g, "و").replace(/ئ/g, "ي")
     .replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
 }
-/* الوصف الإنجليزي للقالب: يجي بعد كلمة Observed (بدون Observed وبدون نقطة، والحرف الأول صغير إلا لو اختصار مثل PPE) */
+/* الوصف الإنجليزي للقالب: وصف مختصر للملاحظة (بدون كلمة Observed وبدون نقطة) */
 function npNorm(s){
   s = String(s || "").trim().replace(/^observed\s+(that\s+)?/i, "").replace(/[.\s]+$/, "");
   return /^[A-Z][a-z]/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s;
@@ -2709,8 +2711,24 @@ function rememberVariant(used){ Object.assign(VLAST, used || {}); store.set("hse
 const lcFirst = s => /^[A-Z][a-z]/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s;
 const NOT_VERB = /^(The|Workers|Scaffolders|No|Never|Do|Only|All|Nobody)\b/;
 const PH = {
-  open: ["Observed {np}", "During the site inspection, we observed {np}", "During today's site visit, we noticed {np}", "Noted on site: {np}", "We found {np}", "The site inspection revealed {np}"],
-  haz: [", creating {hz}", ", which poses {hz}", ", exposing workers to {hz}", ". This creates {hz}", ", resulting in {hz}"],
+  open: [
+    "Observed {np}",
+    "{np} was observed",
+    "{np} was noted",
+    "An unsafe condition was identified: {np}",
+    "The area was found with {np}",
+    "Site conditions indicated {np}",
+    "{np} was identified in the work area",
+    "An unsafe condition was noted, involving {np}"
+  ],
+  haz: [
+    ", creating {hz}",
+    ", presenting {hz}",
+    ", exposing personnel to {hz}",
+    ", with potential for {hz}",
+    ". This presents {hz}",
+    ", resulting in {hz}"
+  ],
   closeHStop: ["Work shall not resume until all violations are rectified.", "The activity must remain stopped until this is fully rectified.", "Work must not restart until the area is made safe and verified by HSE."],
   closeH: ["Stop the activity immediately and rectify all violations before work resumes.", "The activity must be stopped immediately until this is rectified.", "Stop the work immediately; it shall not resume until the hazard is removed."],
   closeM: ["Immediate corrective action is required.", "Please rectify this immediately.", "This requires immediate corrective action.", "Corrective action is required without delay."],
@@ -2728,6 +2746,24 @@ const fill = (s, k, v) => s.replace("{" + k + "}", v);
 function article(w){ return /^[aeiou]/i.test(w) ? "an" : "a"; }
 function hazEn(keys){ const w = keys.map(k => HZ[k][0]); return w.length === 1 ? article(w[0]) + " " + w[0] + " hazard" : joinEn(w) + " hazards"; }
 function hazAr(keys){ return "خطر " + joinAr(keys.map(k => HZ[k][1])); }
+function pickOpen(ch, observed){
+  const i = ch.pick("open", PH.open.length);
+  return fill(PH.open[i], "np", observed);
+}
+function pickHaz(ch, hazard){
+  const i = ch.pick("haz", PH.haz.length);
+  return fill(PH.haz[i], "hz", hazard);
+}
+function pickGood(ch, g){
+  const variants = [
+    "Good practice observed: " + g,
+    "Positive site condition noted: " + g,
+    "The inspection noted good practice: " + g,
+    "A positive practice was observed: " + g,
+    "Good practice was maintained with " + g
+  ];
+  return variants[ch.pick("good", variants.length)];
+}
 function autoRisk(items){
   const bad = items.filter(t => t.risk !== "G");
   if(!bad.length) return items.length ? "G" : "M";
@@ -2736,68 +2772,37 @@ function autoRisk(items){
 function compose(items, opt){
   opt = opt || {};
   const ch = chooser(opt.seed, opt.canon);
-  const bad = items.filter(t => t.risk !== "G"), good = items.filter(t => t.risk === "G");
+  const bad = items.filter(t => t.risk !== "G");
+  const good = items.filter(t => t.risk === "G");
   const risk = opt.risk || autoRisk(items);
-  const f = opt.flags || {};
-  const npOf = t => { const v = t.npv || [t.np]; return v[ch.pick("np:" + t.id, v.length)]; };
-  const actOf = t => { const v = (t.actv && t.actv[0]) ? t.actv : [t.act]; return v[ch.pick("act:" + t.id, v.length)]; };
-  let en = "", ar = "";
-  if(bad.length){
-    const hz = []; bad.forEach(t => t.hz.forEach(h => { if(!hz.includes(h)) hz.push(h); }));
-    const hz4 = hz.slice(0, 4);
-    const opener = PH.open[ch.pick("open", PH.open.length)];
-    en = fill(opener, "np", joinEn(bad.map(npOf))) + (hz4.length ? fill(PH.haz[ch.pick("haz", PH.haz.length)], "hz", hazEn(hz4)) : "") + ".";
-    let startsStop = false;
-    if(bad.length <= 3){
-      const acts = []; bad.forEach(t => { const a = actOf(t); if(a && !acts.includes(a)) acts.push(a); });
-      startsStop = acts.some(a => /^Stop\b/.test(a));
-      if(acts.length){
-        let a = acts.join(" ");
-        const st = ch.pick("actStyle", 4);
-        if(st === 1) a = "Required action: " + a;
-        else if(st === 2 && risk !== "H" && !startsStop && !NOT_VERB.test(a)) a = "Kindly " + lcFirst(a);
-        else if(st === 3 && !/^Stop\b/.test(a) && !NOT_VERB.test(a)) a = "The contractor shall " + lcFirst(a);
-        en += " " + a;
-      }
-    }
-    let close;
-    if(risk === "H") close = startsStop ? PH.closeHStop[ch.pick("closeHStop", PH.closeHStop.length)] : PH.closeH[ch.pick("closeH", PH.closeH.length)];
-    else if(risk === "M") close = PH.closeM[ch.pick("closeM", PH.closeM.length)];
-    else close = PH.closeL[ch.pick("closeL", PH.closeL.length)];
-    if(f.instructed){
-      if(risk === "H") close += PH.instH[ch.pick("instH", PH.instH.length)];
-      else if(risk === "M") close = PH.instM[ch.pick("instM", PH.instM.length)];
-      else close = PH.instL[ch.pick("instL", PH.instL.length)] + close;
-    }
-    if(f.today){
-      if(risk === "L" && !f.instructed) close = PH.todayL[ch.pick("todayL", PH.todayL.length)];
-      else close += PH.today[ch.pick("today", PH.today.length)];
-    }
-    en += " " + close;
-    if(f.repeated) en += PH.rep[ch.pick("rep", PH.rep.length)];
+  const npOf = t => {
+    const v = t.npv || [t.np];
+    return v[ch.pick("np:" + t.id, v.length)];
+  };
 
-    ar = "لوحظ: " + joinAr(bad.map(t => t.ar)) + (hz4.length ? "، مما يشكل " + hazAr(hz4) : "") + ".";
-    const cats = []; bad.forEach(t => { if(!cats.includes(t.cat)) cats.push(t.cat); });
-    cats.slice(0, 2).forEach(c => { if(CAT[c].actAr) ar += " " + CAT[c].actAr; });
-    let closeAr = risk === "H" ? "يجب إيقاف النشاط وعدم استئنافه قبل تصحيح جميع المخالفات." : risk === "M" ? "مطلوب إجراء تصحيحي فوري." : "يرجى التصحيح ومشاركة الإغلاق.";
-    if(f.instructed){
-      if(risk === "H") closeAr += " تم إيقاف النشاط في الموقع والتوجيه بالتصحيح.";
-      else if(risk === "M") closeAr = "تم التوجيه بالتصحيح الفوري في الموقع.";
-      else closeAr = "تم التوجيه بالتصحيح في الموقع. " + closeAr;
-    }
-    if(f.today){
-      if(risk === "L" && !f.instructed) closeAr = "يرجى التصحيح ومشاركة الإغلاق مع الصور اليوم.";
-      else closeAr += " يرجى مشاركة الإغلاق مع الصور اليوم.";
-    }
-    ar += " " + closeAr;
-    if(f.repeated) ar += " ملاحظة متكررة، وعدم إغلاقها سيؤدي إلى التصعيد.";
+  // Consultant observation format: observation only, with no corrective action,
+  // instruction, close-out request, or recommendation.
+  let en = "", ar = "";
+
+  if(bad.length){
+    const hz = [];
+    bad.forEach(t => t.hz.forEach(h => { if(!hz.includes(h)) hz.push(h); }));
+    const hz4 = hz.slice(0, 4);
+    const observed = joinEn(bad.map(npOf)).trim().replace(/[.]+$/, "");
+    const hazard = hz4.length ? hazEn(hz4) : "";
+    en = pickOpen(ch, observed) + (hazard ? pickHaz(ch, hazard) : "") + ".";
+
+    const observedAr = joinAr(bad.map(t => t.ar)).trim().replace(/[.]+$/, "");
+    ar = observedAr + (hz4.length ? "، مما يشكل " + hazAr(hz4) : "") + ".";
   }
+
   if(good.length){
-    const g = fill(PH.good[ch.pick("good", PH.good.length)], "np", joinEn(good.map(npOf)));
-    const ga = "ممارسة جيدة: " + joinAr(good.map(t => t.ar)) + ". عمل ممتاز، يرجى المحافظة على هذا المستوى.";
-    en = en ? en + "\n\n" + g : g;
+    const g = joinEn(good.map(npOf)).trim().replace(/[.]+$/, "");
+    const ga = "ممارسة جيدة: " + joinAr(good.map(t => t.ar)).trim().replace(/[.]+$/, "") + ".";
+    en = en ? en + "\n\n" + pickGood(ch, g) + "." : pickGood(ch, g) + ".";
     ar = ar ? ar + "\n" + ga : ga;
   }
+
   return {en, ar, risk, used: ch.used};
 }
 function selItems(){ return draft.sel.map(id => TPL[id]).filter(Boolean); }
@@ -3585,7 +3590,7 @@ function openAddOwn(prefill){
     '<div class="set-row"><label for="ao-cat">التصنيف</label><select class="field" id="ao-cat">' +
       CATS.map(c => '<option value="' + c.k + '"' + (c.k === cat0 ? " selected" : "") + ">" + esc(c.ar) + "</option>").join("") + "</select></div>" +
     '<div class="set-row"><label for="ao-ar">وصفها بالعربي (اللي تشوفه بالقائمة)</label><input class="field" id="ao-ar" autocomplete="off" placeholder="مثال: سلم خشبي مصنّع محليًا" value="' + esc(prefill.ar || "") + '"></div>' +
-    '<div class="set-row"><label for="ao-np">بالإنجليزي — يجي بعد كلمة Observed</label><textarea class="field ltr" id="ao-np" rows="2" placeholder="e.g. a locally made wooden ladder in use">' + esc(prefill.np || "") + "</textarea></div>" +
+    '<div class="set-row"><label for="ao-np">بالإنجليزي — وصف الملاحظة</label><textarea class="field ltr" id="ao-np" rows="2" placeholder="e.g. a locally made wooden ladder in use">' + esc(prefill.np || "") + "</textarea></div>" +
     '<div class="set-row"><label for="ao-act">الإجراء المطلوب (اختياري)</label><textarea class="field ltr" id="ao-act" rows="2" placeholder="e.g. Remove it from site and provide a certified ladder."></textarea></div>' +
     '<div class="row" id="ao-risk-row"><span class="eyebrow">الخطورة</span><div class="seg risk" id="ao-risk">' +
       ["H", "M", "L"].map(v => '<button type="button" data-v="' + v + '" aria-pressed="' + (v === (prefill.risk || "M")) + '">' + RISK[v].ar + "</button>").join("") + "</div></div>" +
@@ -3622,7 +3627,7 @@ function tplEditor(id){
   const m = $("#modalIn");
   m.innerHTML = '<h3>تعديل الملاحظة <span class="code">' + CAT[t.cat].code + "</span></h3>" +
     '<div class="set-row"><label for="te-ar">الوصف بالعربي (اللي تشوفه بالقائمة)</label><input class="field" id="te-ar" value="' + esc(t.ar) + '"></div>' +
-    '<div class="set-row"><label for="te-np">الوصف بالإنجليزي (يجي بعد كلمة Observed)</label><textarea class="field ltr" id="te-np" rows="3">' + esc(t.np) + "</textarea></div>" +
+    '<div class="set-row"><label for="te-np">الوصف بالإنجليزي</label><textarea class="field ltr" id="te-np" rows="3">' + esc(t.np) + "</textarea></div>" +
     '<div class="set-row"><label for="te-act">الإجراء التصحيحي (English)</label><textarea class="field ltr" id="te-act" rows="3">' + esc(t.act) + "</textarea></div>" +
     (t.risk === "G" ? "" : '<div class="row"><span class="eyebrow">الخطورة</span><div class="seg risk" id="te-risk">' + ["H", "M", "L"].map(v => '<button type="button" data-v="' + v + '" aria-pressed="' + (t.risk === v) + '">' + RISK[v].ar + "</button>").join("") + "</div></div>") +
     '<div class="hint">التعديل يتطبّق على الملاحظات الجاية ويوصل لكل أجهزتك عبر الشيت.</div>' +
